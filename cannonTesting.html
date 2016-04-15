@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CannonJS Testing</title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="css/style.css" type="text/css"/>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			* {
+				margin:0,
+				padding:0
+			}
+			body {
+				overflow:hidden,
+			}
+		</style>
+	</head>
+	<body>
+		<script src="cannon.js-master/build/cannon.min.js"></script>
+		<script src="three.js-master/build/three.min.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="three.js-master/examples/js/controls/MouseControls.js"></script>
+		<script>
+			var world, timeStep=1/60, camera, scene, renderer,
+				geometry, material, mesh;
+
+			var box, smallSphere, mediumSphere, largeSphere;
+			var boxBody, sSphereBody, mSphereBody, lSphereBody;
+			var boxGeo, boxMat, boxMesh;
+			var sSphereGeo, sSphereMat, sSphereMesh;
+			var mSphereGeo, mSphereMat, mSphereMesh;
+			var lSphereGeo, lSphereMat, lSphereMesh;
+
+				initThree();
+				initCannon();
+				animate();
+
+				function initCannon() {
+					world = new CANNON.World();
+					world.gravity.set(-3,0,-60);
+					world.broadphase = new CANNON.NaiveBroadphase();
+					world.solver.iterations = 10;
+
+					box = new CANNON.Box(new CANNON.Vec3(1,1,1));
+					smallSphere = new CANNON.Sphere(1);
+					mediumSphere = new CANNON.Sphere(3);
+					largeSphere = new CANNON.Sphere(7);
+
+					boxBody = new CANNON.Body( { mass: 1 });
+					sSphereBody = new CANNON.Body( { mass: 3 });
+					mSphereBody = new CANNON.Body( { mass: 5 });
+					lSphereBody = new CANNON.Body( { mass: 9 });
+
+					//To add angular velocity, use Body.angularVelocity.set().
+					//See Body docs on cannonjs.org for other functions as well.
+					boxBody.addShape(box);
+					world.addBody(boxBody);
+
+					sSphereBody.addShape(smallSphere);
+					world.addBody(sSphereBody);
+
+					mSphereBody.addShape(mediumSphere);
+					world.addBody(mSphereBody);
+
+					lSphereBody.addShape(largeSphere);
+					world.addBody(lSphereBody);
+				}
+
+				function initThree() {
+					scene = new THREE.Scene();
+
+					camera = new THREE.PerspectiveCamera( 100000,
+						window.innerWidth / window.innerHeight, 0.1, 100000);
+					camera.position.z = 30;
+					var controls = new THREE.OrbitControls(camera);
+					//controls.target.set(0, 0, 0);
+					//controls.update();
+					//controls.onMouseMove(controls.update());
+					//controls.autoRotate = true;
+					//controls.autoRotateSpeed = Math.sin(Math.random() * 4)
+					controls.minDistance = 10
+					controls.maxDistance = 100
+					scene.add(camera);
+
+
+
+					boxGeo = new THREE.BoxGeometry(1,1,2);
+					boxMat = new THREE.MeshBasicMaterial( { color: 0xff000,
+						wireframe: true });
+					boxMesh = new THREE.Mesh( boxGeo, boxMat );
+					//boxMesh.position.x = 20;
+					//boxMesh.quaternion
+
+					sSphereGeo = new THREE.SphereGeometry(0.5, 20, 20);
+					sSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
+						wireframe: true });
+					sSphereMesh = new THREE.Mesh( sSphereGeo, sSphereMat );
+					//sSphereMesh.position.setX(5);
+
+					mSphereGeo = new THREE.SphereGeometry(3, 28, 28);
+					mSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
+						wireframe: true });
+					mSphereMesh = new THREE.Mesh( mSphereGeo, mSphereMat );
+
+					lSphereGeo = new THREE.SphereGeometry(7, 32, 32);
+					lSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
+						wireframe: true });
+					lSphereMesh = new THREE.Mesh( lSphereGeo, lSphereMat );
+
+					scene.add(boxMesh);
+					scene.add(sSphereMesh);
+					scene.add(mSphereMesh);
+					scene.add(lSphereMesh);
+
+					renderer = new THREE.WebGLRenderer();
+					renderer.setSize( window.innerWidth, window.innerHeight );
+					document.body.appendChild( renderer.domElement );
+				}
+
+				function animate() {
+					requestAnimationFrame( animate );
+					updatePhysics();
+					render();
+				}
+
+				function updatePhysics() {
+					world.step(timeStep);
+
+					boxMesh.position.set(0,0,0);
+					//boxMesh.quaternion.copy(boxBody.quaternion);
+
+					sSphereMesh.position.set(12,0,0);
+					//sSphereMesh.quaternion.copy(sSphereBody.quaternion);
+
+					mSphereMesh.position.set(-6,0,0);
+					//mSphereMesh.quaternion.copy(mSphereBody.quaternion);
+
+					lSphereMesh.position.set(0,15,0);
+					//lSphereMesh.quaternion.copy(mSphereBody.quaternion);
+
+
+					/*boxMesh.position.copy(boxBody.position);
+					boxMesh.quaternion.copy(boxBody.quaternion);
+
+					sSphereMesh.position.copy(sSphereBody.position);
+					sSphereMesh.quaternion.copy(sSphereBody.quaternion);
+
+					mSphereMesh.position.copy(mSphereBody.position);
+					mSphereMesh.quaternion.copy(mSphereBody.quaternion);
+
+					lSphereMesh.position.copy(lSphereBody.position);
+					lSphereMesh.quaternion.copy(lSphereBody.quaternion);*/
+				}
+
+				function render() {
+					renderer.render( scene, camera );
+				}
+		</script>
+	</body>
+</html>
