@@ -30,6 +30,14 @@ CANNON.Demo = function(options){
         gz: 0,
         iterations: 3,
         tolerance: 0.0001,
+        spawnBolides: false, 
+        size: .5,
+        redEarth: false, 
+        frequency: 30, 
+        speed: 1, 
+        vx: 1,
+        vy: 1,
+        vz: 1,
         k: 1e6,
         d: 3,
         scene: 0,
@@ -44,7 +52,8 @@ CANNON.Demo = function(options){
         shadows: false,
         aabbs: false,
         profiling: false,
-        maxSubSteps:3
+        maxSubSteps:3,
+
     };
 
     // Extend settings with options
@@ -133,7 +142,6 @@ CANNON.Demo = function(options){
         var lineZ = new THREE.Line( gZ, new THREE.LineBasicMaterial({color:0x0000ff}));
         mesh.add(lineX);
         mesh.add(lineY);
-        mesh.add(lineZ);
         return mesh;
     });
     function restartGeometryCaches(){
@@ -205,6 +213,17 @@ CANNON.Demo = function(options){
         }
         settings.rendermode = mode;
     }
+
+ 
+
+
+  //Bolide stuff
+
+  
+
+
+
+
 
     /**
      * Add a scene to the demo app
@@ -581,6 +600,7 @@ CANNON.Demo = function(options){
 
             // Render mode
             var rf = gui.addFolder('Rendering');
+
             rf.add(settings,'rendermode',{Solid:"solid",Wireframe:"wireframe"}).onChange(function(mode){
                 setRenderMode(mode);
             });
@@ -668,8 +688,41 @@ CANNON.Demo = function(options){
 
             // Scene picker
             sceneFolder = gui.addFolder('Scenes');
+
+            //Spawn Bolides
+            var bf = gui.addFolder('Spawn Bolides');
+
+            bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){
+
+            }); 
+
+            bf.add(settings, 'redEarth').onChange(function(redEarth){
+
+            });
+
+            bf.add(settings, 'size');
+            bf.add(settings, 'frequency').onChange(function(frequency){
+            });
+
+            bf.add(settings, 'speed').onChange(function(speed){
+               
+            });
+
+            bf.add(settings, 'size').onChange(function(size){
+               
+            });
+
+            bf.add(settings, 'vx').onChange(function(vx){
+            });
+            bf.add(settings, 'vy').onChange(function(vy){
+            });
+            bf.add(settings, 'vz').onChange(function(vz){
+            });
+
             sceneFolder.open();
         }
+
+      
 
         // Trackball controls
         controls = new THREE.TrackballControls( camera, renderer.domElement );
@@ -914,6 +967,38 @@ CANNON.Demo.prototype.setGlobalSpookParams = function(k,d,h){
 CANNON.Demo.prototype.getWorld = function(){
     return this.world;
 };
+
+CANNON.Demo.prototype.getFrequency = function(){
+    return this.settings.frequency; 
+}
+
+CANNON.Demo.prototype.getSpeed = function(){
+    return this.settings.speed;  
+}
+
+CANNON.Demo.prototype.getVX = function(){
+    return this.settings.vx; 
+}
+
+CANNON.Demo.prototype.getVY = function(){
+    return this.settings.vy; 
+}
+
+CANNON.Demo.prototype.getVZ = function(){
+    return this.settings.vz; 
+}
+
+CANNON.Demo.prototype.getSpawnBolides = function(){
+    return this.settings.spawnBolides; 
+}
+
+CANNON.Demo.prototype.getSize = function(){
+    return this.settings.size; 
+}
+
+CANNON.Demo.prototype.getRedEarth = function(){
+    return this.settings.redEarth; 
+}
 
 CANNON.Demo.prototype.addVisual = function(body){
     var s = this.settings;

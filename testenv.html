@@ -20,6 +20,44 @@
        * A demo showing how to use the preStep callback to add a force to a body.
        * This will act like a force field.
        */
+
+      var spawnBolides = true; 
+      function generateBolide(mass){
+              var redEarth = demo.getRedEarth(); 
+              var size = demo.getSize(); 
+              var speed = demo.getSpeed(); 
+              var shape = new CANNON.Sphere(size); 
+              debugger;
+              
+              var x = Math.floor((Math.random() * 10) + -5)*10;
+              var y = Math.floor((Math.random() * 10) + -5)*10;
+              var z = Math.floor((Math.random() * 10) + -5)*10;
+
+              var vx = demo.getVX(); 
+              var vy = demo.getVY(); 
+              var vz = demo.getVZ(); 
+              if(redEarth == true){
+                if(x <0){
+                  vx =vx *(-1); 
+                }
+                if(y <0){
+                  vy =vy *(-1); 
+                }
+                if(z <0){
+                  vz =vz *(-1); 
+                }
+              }
+              var bolide = new CANNON.Body({
+                mass: mass, 
+                position: new CANNON.Vec3(x,y,z)
+              });
+
+              bolide.addShape(shape); 
+              bolide.velocity.set(-vx*speed,-vy*speed,-vz*speed);
+              bolide.linearDamping =0.0; 
+              return bolide; 
+      }
+      var i = 0; 
       var demo = new CANNON.Demo();
       demo.addScene("Moon",function(){
           var world = demo.getWorld();
@@ -30,14 +68,33 @@
             mass: mass,
             position: new CANNON.Vec3(5,0,0)
           });
+          
           moon.addShape(moonShape);
+
           var planet = new CANNON.Body({ mass: 0 });
           planet.addShape(planetShape);
           moon.velocity.set(0,0,8);
           moon.linearDamping = 0.0;
+          
+
           // Use the preStep callback to apply the gravity force on the moon.
           // This callback is evoked each timestep.
 	  world.addEventListener("preStep", function() {
+      spawnBolides = demo.getSpawnBolides(); 
+      debugger;
+      var bolide = generateBolide(5, moonShape); 
+      var frequency = demo.getFrequency(); 
+         debugger;
+      if(spawnBolides){
+        if((i % frequency) ==0){
+          world.addBody(bolide); 
+          demo.addVisual(bolide); 
+        }
+      }
+
+    
+
+          i++; 
 
 	  });
 
@@ -53,11 +110,15 @@
             moon_to_planet.mult(1500/Math.pow(distance,2),this.force);
           }
           // We add the objects to the world to simulate them
-          world.addBody(moon);
+          //demo.spawnBolide(bolide);
+          world.addBody(moon); 
           world.addBody(planet);
+          //world.addBody(bolide); 
           // And we add them to the demo to make them visible
-          demo.addVisual(moon);
           demo.addVisual(planet);
+          demo.addVisual(moon); 
+          //demo.addVisual(bolide); 
+         // spawnBolide(bolide); 
         });
       demo.start();
     </script>
