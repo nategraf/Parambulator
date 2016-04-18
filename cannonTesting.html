@@ -67,6 +67,34 @@
 				}
 
 				function initThree() {
+					var container = document.getElementById('container');
+					scene = new THREE.Scene();
+					group = new THREE.Group();
+					scene.add(group);
+					var earthLoader = new THREE.TextureLoader();
+					earthLoader.load(
+						'from-braindump/Explosion-Source/textures/earth_big.jpg',
+						function( texture ) {
+							var earthGeo = new THREE.SphereGeometry(3,28,28); 
+							var material = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
+							var mesh = new THREE.Mesh(earthGeo, material);
+							group.add(mesh);
+						});
+					var loader2 = new THREE.TextureLoader();
+					loader2.load(
+						'from-braindump/Explosion-Source/textures/earth_bump_big.jpg',
+						function( texture ) {
+							var material = new THREE.MeshBasicMaterial( {
+								map: texture
+							} );
+						},
+						function( xhr ) {
+							console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+						},
+						function( xhr ) {
+							console.log( 'An error happened' );
+						}
+					});
 					scene = new THREE.Scene();
 
 					camera = new THREE.PerspectiveCamera( 100000,
