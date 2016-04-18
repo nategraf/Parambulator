@@ -700,7 +700,6 @@ CANNON.Demo = function(options){
 
             });
 
-            bf.add(settings, 'size');
             bf.add(settings, 'frequency').onChange(function(frequency){
             });
 
