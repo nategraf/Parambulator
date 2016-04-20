@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Test Environment Port</title>
+		<meta charset="utf-8">
+    <link rel="stylesheet" href="css/style.css" type="text/css"/>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	</head>
+	<body>
+		<script src="js/cannon.min.js"></script>
+		<script src="js/dat.gui.js"></script>
+		<script src="three.js-master/build/three.min.js"></script>
+		<script src="js/TrackballControls.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/Stats.js"></script>
+		<script src="js/smoothie.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="three.js-master/examples/js/controls/MouseControls.js"></script>
+		<script>
+		/*
+				TODO: 1. Take most of the Demo.js code and extract it out of the
+									Demo object.
+							2. Get the webpage to work identically to the way that
+									testenv.html works.
+							3. Gradually reduce this testenvport.html codebase to only what
+									is necessary to keep the simulation running.
+							4. Re-name testenvport.html to something more release-ready.
+
+				NOTE: As of 9:27pm 4/19 I am on shape2visual(). Since somewhere around
+									init() I noticed myself copy-pasting more and more. I'll
+									need to make sure that I put significant work into Step 3
+									above to remove a lot of the unneccessary parts.
+		*/
+
+
+			/*COPIED FROM CANNON.DEMO.JS*/
+			//NOTE go back over the contents of settings and remove what is unused
+			var settings = {
+        stepFrequency: 60,
+        quatNormalizeSkip: 2,
+        quatNormalizeFast: true,
+        gx: 0,
+        gy: 0,
+        gz: 0,
+        iterations: 3,
+        tolerance: 0.0001,
+        spawnBolides: false,
+        size: 0.5,
+        redEarth: true,
+        frequency: 30,
+        speed: 10,
+        vx: 1,
+        vy: 1,
+        vz: 1,
+        k: 1e6,
+        d: 3,
+        scene: 0,
+        paused: false,
+        rendermode: "solid",
+        constraints: false,
+        contacts: false,  // Contact points
+        cm2contact: false, // center of mass to contact points
+        normals: false, // contact normals
+        axes: false, // "local" frame axes
+        particleSize: 0.1,
+        shadows: false,
+        aabbs: false,
+        profiling: false,
+        maxSubSteps:3,
+    	};
+
+    if(settings.stepFrequency % 60 !== 0){
+        throw new Error("stepFrequency must be a multiple of 60.");
+    }
+
+    var bodies = [];
+    var visuals  = [];
+    var scenes = [];
+    var gui = null;
+    var smoothie = null;
+    var smoothieCanvas = null;
+    var scenePicker = {};
+			/****************************/
+
+			var world, camera, controls, scene,
+					container, sceneHUD, cameraOrtho,
+					renderer,  hudMaterial, spawnBolides = true,
+					mouseX = 0, mouseY = 0, windowHalfX = window.innerWidth/2,
+					windowHalfY = window.innerHeight/2;
+
+			var SHADOW_MAP_WIDTH = 512,
+					SHADOW_MAP_HEIGHT = 512,
+					MARGIN = 0, SCREEN_WIDTH = window.innerWidth,
+					SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
+
+			/*THREE*/
+
+			/*CANNON*/
+			init();
+			animate();
+			/********/
+
+			function generateBolide(mass) {
+				/*var redEarth = demo.getRedEarth();
+				var size = demo.getSize();
+				var speed = demo.getSpeed();
+				var shape = new CANNON.Sphere(size);
+				debugger;*/
+
+				var x = Math.floor((Math.random() * 10) + -5)*10;
+				var y = Math.floor((Math.random() * 10) + -5)*10;
+				var z = Math.floor((Math.random() * 10) + -5)*10;
+			}
+
+			function updateVisuals() {
+				var N = bodies.length;
+				for(var i = 0; i < N; i++) {
+					var b = bodies[i], visual = visuals[i];
+					visual.position.copy(b.position);
+					if(b.quaternion) {
+						visual.quaternion.copy(b.quaternion);
+					}
+				}
+			}
+
+			function init() {
+				container = document.createElement('div');
+				document.body.appendChild(container);
+				camera = new THREE.PerspectiveCamera(24, SCREEN_WIDTH/SCREEN_HEIGHT,
+					NEAR, FAR);
+				camera.up.set(0,0,1);
+				camera.position.set(0,30,20);
+				scene = new THREE.Scene();
+				scene.add(camera);
+				document.addEventListener('mousemove',onDocumentMouseMove);
+        window.addEventListener('resize',onWindowResize);
+				var renderFolder = gui.addFolder('Rendering');
+
+        renderFolder.add(settings,'rendermode',{Solid:"solid",Wireframe:"wireframe"}).onChange(function(mode){
+          setRenderMode(mode);
+        });
+        renderFolder.add(settings,'contacts');
+        renderFolder.add(settings,'cm2contact');
+        renderFolder.add(settings,'normals');
+        renderFolder.add(settings,'constraints');
+        renderFolder.add(settings,'axes');
+        renderFolder.add(settings,'particleSize').min(0).max(1).onChange(function(size){
+          for(var i=0; i<visuals.length; i++){
+            if(bodies[i] instanceof CANNON.Particle)
+              visuals[i].scale.set(size,size,size);
+          }
+        });
+        renderFolder.add(settings,'shadows').onChange(function(shadows){
+          if(shadows){
+            renderer.shadowMapAutoUpdate = true;
+          } else {
+            renderer.shadowMapAutoUpdate = false;
+            renderer.clearTarget( light.shadowMap );
+          }
+        });
+				var worldFolder = gui.addFolder('World');
+				worldFolder.add(settings, 'paused').onChange(function(p){
+					//...
+				});
+				worldFolder.add(settings, 'stepFrequency', 60, 60*10).step(60);
+				var solverFolder = gui.addFolder('Solver');
+				solverFolder.add(settings,'iterations',1,50).step(1).onChange(function(it) {
+					world.solver.iterations = it;
+				});
+				sf.add(settings, 'k',10,10000000).onChange(function(k){
+          that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
+        });
+        sf.add(settings, 'd',0,20).step(0.1).onChange(function(d){
+          that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
+        });
+        sf.add(settings, 'tolerance',0.0,10.0).step(0.01).onChange(function(t){
+          world.solver.tolerance = t;
+        });
+				sceneFolder = gui.addFolder('Scenes');
+				var bf = gui.addFolder('Spawn Bolides');
+
+        bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){});
+        bf.add(settings, 'redEarth').onChange(function(redEarth){});
+        bf.add(settings, 'frequency').onChange(function(frequency){});
+    		bf.add(settings, 'speed').onChange(function(speed){});
+  			bf.add(settings, 'size').onChange(function(size){});
+        bf.add(settings, 'vx').onChange(function(vx){});
+        bf.add(settings, 'vy').onChange(function(vy){});
+        bf.add(settings, 'vz').onChange(function(vz){});
+				sceneFolder.open();
+
+				// Trackball controls
+        controls = new THREE.TrackballControls( camera, renderer.domElement );
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.2;
+        controls.noZoom = false;
+        controls.noPan = false;
+        controls.staticMoving = false;
+        controls.dynamicDampingFactor = 0.3;
+        var radius = 100;
+        controls.minDistance = 0.0;
+        controls.maxDistance = radius * 1000;
+        //controls.keys = [ 65, 83, 68 ]; // [ rotateKey, zoomKey, panKey ]
+        controls.screen.width = SCREEN_WIDTH;
+        controls.screen.height = SCREEN_HEIGHT;
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				if(!settings.paused) {
+					updateVisuals();
+					updatePhysics();
+				}
+				render();
+			}
+			var lastCallTime = 0;
+			function updatePhysics() {
+				var timeStep = 1/settings.stepFrequency;
+				var now = Date.now() / 1000;
+				if(!lastCallTime) {
+					world.step(timeStep);
+					return;
+				}
+				var timeSinceLastCall = now - lastCallTime;
+				world.step(timeStep, timeSinceLastCall, settings.maxSubSteps);
+				lastCallTime = now;
+			}
+
+			function onDocumentMouseMove( event ) {
+        mouseX = ( event.clientX - windowHalfX );
+        mouseY = ( event.clientY - windowHalfY );
+    	}
+
+			function onWindowResize( event ) {
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+
+        renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+
+        camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+        camera.updateProjectionMatrix();
+
+        controls.screen.width = SCREEN_WIDTH;
+        controls.screen.height = SCREEN_HEIGHT;
+
+        camera.radius = ( SCREEN_WIDTH + SCREEN_HEIGHT ) / 4;
+    	}
+
+			function render(){
+        controls.update();
+        renderer.clear();
+        renderer.render( scene, camera );
+    	}
+
+			document.addEventListener('keypress',function(e){
+        if(e.keyCode){
+          switch(e.keyCode){
+            case 32: // Space - restart
+              restartCurrentScene();
+              break;
+            case 104: // h - toggle widgets
+              if(stats.domElement.style.display=="none"){
+                stats.domElement.style.display = "block";
+                info.style.display = "block";
+              } else {
+                stats.domElement.style.display = "none";
+                info.style.display = "none";
+              }
+              break;
+            case 97: // a - AABBs
+            	settings.aabbs = !settings.aabbs;
+              updategui();
+              break;
+            case 99: // c - constraints
+              settings.constraints = !settings.constraints;
+              updategui();
+              break;
+            case 112: // p
+              settings.paused = !settings.paused;
+              updategui();
+              break;
+            case 115: // s
+              var timeStep = 1 / settings.stepFrequency;
+              world.step(timeStep);
+              updateVisuals();
+              break;
+            case 109: // m - toggle materials
+              var idx = renderModes.indexOf(settings.rendermode);
+              idx++;
+              idx = idx % renderModes.length; // begin at 0 if we exceeded number of modes
+              setRenderMode(renderModes[idx]);
+              updategui();
+              break;
+            /*case 49:
+            case 50:
+            case 51:
+            case 52:
+            case 53:
+            case 54:
+            case 55:
+            case 56:
+            case 57:
+              // Change scene
+              // Only for numbers 1-9 and if no input field is active
+              if(scenes.length > e.keyCode-49 && !document.activeElement.localName.match(/input/)){
+                changeScene(e.keyCode-49);
+              }
+              break;*/
+          }
+        }
+    	});
+
+			//NOTE not sure if start() and buildScene() are needed
+			function start() {
+				buildScene(0);
+			}
+
+			function buildScene(n) {
+				// Remove current bodies and visuals
+        var num = visuals.length;
+        for(var i=0; i<num; i++){
+            world.remove(bodies.pop());
+            var mesh = visuals.pop();
+            that.scene.remove(mesh);
+        }
+        // Remove all constraints
+        while(world.constraints.length){
+            world.removeConstraint(world.constraints[0]);
+        }
+
+        // Run the user defined "build scene" function
+        scenes[n]();
+
+        // Read the newly set data to the gui
+        settings.iterations = world.solver.iterations;
+        settings.gx = world.gravity.x+0.0;
+        settings.gy = world.gravity.y+0.0;
+        settings.gz = world.gravity.z+0.0;
+        settings.quatNormalizeSkip = world.quatNormalizeSkip;
+        settings.quatNormalizeFast = world.quatNormalizeFast;
+        updategui();
+
+        restartGeometryCaches();
+			}
+
+			function addVisual(body, color, texture) {
+				var s = settings;
+				var mesh;
+				if (body instanceof CANNON.Body) {
+					mesh = shape2mesh(body);
+				}
+				if (mesh) {
+					bodies.push(body);
+					visuals.push(mesh);
+					body.visualref = mesh;
+					body.visualref.visualId = bodies.length - 1;
+					scene.add(mesh);
+				}
+			};
+
+			function removeVisual(body) {
+				if(body.visualref) {
+					var bds = bodies;
+					var vis = visuals;
+					var old_b = [];
+					var old_v = [];
+					var n = bodies.length;
+
+					for (var i = 0; i < n; i++) {
+						old_b.unshift(bodies.pop());
+						old_v.unshift(bodies.pop());
+					}
+
+					var id = body.visualref.visualId;
+        	for(var j=0; j<old_b.length; j++){
+            if(j !== id){
+              var i = j>id ? j-1 : j;
+              bodies[i] = old_b[j];
+              visuals[i] = old_v[j];
+              bodies[i].visualref = old_b[j].visualref;
+              bodies[i].visualref.visualId = i;
+            }
+        	}
+        	body.visualref.visualId = null;
+        	scene.remove(body.visualref);
+        	body.visualref = null;
+				}
+			};
+
+			function shape2mesh(body) {
+				var wireframe = settings.renderMode === "wireframe";
+				var obj = new THREE.Object3D();
+
+				for (var i = 0; i < body.shapes.length; i++) {
+					var shape = body.shapes[i];
+					var mesh;
+
+				}
+			}
+
+		</script>
+	</body>
+</html>
