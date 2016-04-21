@@ -15,6 +15,7 @@
     <script src="js/Detector.js"></script>
     <script src="js/Stats.js"></script>
     <script src="js/smoothie.js"></script>
+    <script src="dist/orb.min.js"></script>
     <script>
       /**
        * A demo showing how to use the preStep callback to add a force to a body.
@@ -22,31 +23,47 @@
        */
 
       var spawnBolides = true; 
+
       function generateBolide(mass){
               var redEarth = demo.getRedEarth(); 
               var size = demo.getSize(); 
               var speed = demo.getSpeed(); 
               var shape = new CANNON.Sphere(size); 
               debugger;
-              
-              var x = Math.floor((Math.random() * 10) + -5)*10;
-              var y = Math.floor((Math.random() * 10) + -5)*10;
-              var z = Math.floor((Math.random() * 10) + -5)*10;
+            
 
-              var vx = demo.getVX(); 
-              var vy = demo.getVY(); 
-              var vz = demo.getVZ(); 
-              if(redEarth == true){
-                if(x <0){
-                  vx =vx *(-1); 
-                }
-                if(y <0){
-                  vy =vy *(-1); 
-                }
-                if(z <0){
-                  vz =vz *(-1); 
-                }
-              }
+              var a = demo.getA(); 
+              var e = demo.getE(); 
+              var i = demo.getI(); 
+              var O = demo.getO(); 
+              var o = demo.geto(); 
+              var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0); 
+
+
+              // var x = Math.floor((Math.random() * 10) + -5)*10;
+              // var y = Math.floor((Math.random() * 10) + -5)*10;
+              // var z = Math.floor((Math.random() * 10) + -5)*10;
+              var x = cartesian[0][0]; 
+              var y = cartesian[0][1]; 
+              var z = cartesian[0][2]; 
+              // var vx = demo.getVX(); 
+              // var vy = demo.getVY(); 
+              // var vz = demo.getVZ(); 
+
+              var vx = (cartesian[1][0]/10000000);
+              var vy = (cartesian[1][1]/10000000);
+              var vz = (cartesian[1][2]/10000000);
+              // if(redEarth == true){
+              //   if(x <0){
+              //     vx =vx *(-1); 
+              //   }
+              //   if(y <0){
+              //     vy =vy *(-1); 
+              //   }
+              //   if(z <0){
+              //     vz =vz *(-1); 
+              //   }
+              // }
               var bolide = new CANNON.Body({
                 mass: mass, 
                 position: new CANNON.Vec3(x,y,z)

@@ -38,6 +38,11 @@ CANNON.Demo = function(options){
         vx: 1,
         vy: 1,
         vz: 1,
+        a: 5, 
+        e: .002, 
+        i: 90, 
+        O: 1, 
+        o: 1, 
         k: 1e6,
         d: 3,
         scene: 0,
@@ -717,7 +722,17 @@ CANNON.Demo = function(options){
             });
             bf.add(settings, 'vz').onChange(function(vz){
             });
-
+            bf.add(settings, 'a').onChange(function(a){
+            });
+            bf.add(settings, 'e').onChange(function(e){
+            });
+            bf.add(settings, 'i').onChange(function(i){
+            });
+            bf.add(settings, 'O').onChange(function(O){
+            });
+            bf.add(settings, 'o').onChange(function(o){
+            });
+  
             sceneFolder.open();
         }
 
@@ -985,6 +1000,26 @@ CANNON.Demo.prototype.getVY = function(){
 
 CANNON.Demo.prototype.getVZ = function(){
     return this.settings.vz; 
+}
+
+CANNON.Demo.prototype.getA = function(){
+    return this.settings.a; 
+}
+
+CANNON.Demo.prototype.getE = function(){
+    return this.settings.e; 
+}
+
+CANNON.Demo.prototype.getI = function(){
+    return this.settings.i; 
+}
+
+CANNON.Demo.prototype.getO = function(){
+    return this.settings.O; 
+}
+
+CANNON.Demo.prototype.geto = function(){
+    return this.settings.o; 
 }
 
 CANNON.Demo.prototype.getSpawnBolides = function(){
