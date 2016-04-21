@@ -1,0 +1,46 @@
+{
+  "name": "orbjs",
+  "version": "0.2.2",
+  "description": "orb offers a few simple methods for several common problems of orbital mechanics",
+  "keywords": [
+    "orbit",
+    "orbital mechanics",
+    "orbit determination"
+  ],
+  "homepage": "https://github.com/benelsen/orb",
+  "author": {
+    "name": "Ben Elsen",
+    "url": "http://benelsen.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benelsen/orb.git"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "core-js": "^0.9.11",
+    "leapseconds": "^1.1.1"
+  },
+  "devDependencies": {
+    "babel": "^5.2.17",
+    "babelify": "^6.0.2",
+    "browserify": "^10.1.3",
+    "complexity-report": "^1.0.6",
+    "eslint": "^0.21.2",
+    "exorcist": "^0.4.0",
+    "mocha": "^2.2.4",
+    "should": "^6.0.3",
+    "uglify-js": "^2.4.22"
+  },
+  "scripts": {
+    "lint": "eslint src/",
+    "babel": "babel src/ -d src5/ --source-maps",
+    "browserify": "browserify src/orb.js -d -s orb -t [babelify --sourceMapRelative .] | exorcist dist/orb.js.map > dist/orb.js",
+    "uglifyjs": "uglifyjs dist/orb.js -o dist/orb.min.js --source-map dist/orb.min.js.map --source-map-url orb.min.js.map --in-source-map dist/orb.js.map --compress unused=false --mangle",
+    "build": "npm run babel && npm run browserify && npm run uglifyjs",
+    "pretest": "npm run lint && npm run babel",
+    "test": "mocha --recursive --reporter spec --require should",
+    "prepublish": "npm run build"
+  },
+  "license": "MIT"
+}
