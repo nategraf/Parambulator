@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <title>cannon.js - callbacks demo</title>
@@ -88,6 +88,43 @@
 
               return bolide; 
       }
+
+      function addLinearPathProjection(body, world) {
+          let cylLength = 10;
+          let projectionShape = new CANNON.Cylinder(body.shapes[0].radius, body.shapes[0].radius, cylLength, 20);
+          projectionShape.collisionResponse = false;
+          let projection = new CANNON.Body({
+              mass: 1,
+              collisionFilterGroup: 2,
+              collisionFilterMask: 2,
+              position: body.position
+          });
+          projection.addShape(projectionShape, new CANNON.Vec3(0, 0, cylLength / 2.0));
+          projection.addEventListener("collide", function (e) {
+              let dangerPeriod = body.shapes[0].radius / e.contact.bi.velocity.length(); // Not quite right, but close
+              if (Math.abs((e.contact.ri.length() / e.contact.bi.velocity.length()) - (e.contact.rj.length() / e.contact.bj.velocity.length())) < dangerPeriod) {
+                  console.log("Orbiting body collision predicted");
+                  // TODO: Change color of the orbiting body needs to be added here
+              }
+          });
+          world.addEventListener("postStep", function () {
+              if (world.bodies.indexOf(body) != -1) {
+                  projection.quaternion.setFromVectors(new CANNON.Vec3(0, 0, 1), body.velocity);
+                  projection.velocity.copy(body.velocity);
+              }
+              else {
+                  demo.removeVisual(projection);
+                  world.removeBody(projection);
+                  // TODO This causes a minor error in javascript. Figure out how to fix it
+              }
+          });
+          world.addBody(projection);
+      }
+
+      function addCollisionBehavior(body, world) {
+          body.addEventListener("collide", function (e) { demo.removeVisual(this); world.remove(this); });
+      }
+
       var i = 0; 
       var demo = new CANNON.Demo();
       demo.addScene("Moon",function(){
@@ -113,7 +150,8 @@
 	  world.addEventListener("preStep", function() {
       spawnBolides = demo.getSpawnBolides(); 
       debugger;
-      var bolide = generateBolide(5, moonShape); 
+      var bolide = generateBolide(5, moonShape);
+      addLinearPathProjection(bolide, world); // Add the path projections!
       var frequency = demo.getFrequency(); 
          debugger;
       if(spawnBolides){
