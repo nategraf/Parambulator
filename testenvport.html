@@ -9,7 +9,7 @@
 	<body>
 		<script src="js/cannon.min.js"></script>
 		<script src="js/dat.gui.js"></script>
-		<script src="three.js-master/build/three.min.js"></script>
+		<script src="three.js-master/build/three.js"></script>
 		<script src="js/TrackballControls.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/Stats.js"></script>
@@ -28,13 +28,51 @@
 							5. Re-name testenvport.html to something more release-ready.
 
 				NOTE: As of 4:22pm 4/24 I am removing the option to render in wirefram
-				
+
 				NOTE: As of 5:27pm 4/24 I am done copying the necessary components
 							from Demo.js, I think. I have also copied a good portion of the
 							original testenv.html, the two parts just aren't totally
 							integrated together do to scoping issues that weren't a problem
 							in the original setup.
+
+				NOTE: As of 2:35pm 4/25, testenvport.html has the following functions:
+					startCannon()
+						updategui()
+						addScene()
+						restartCurrentScene()
+						ensureNonZero()
+						updateVisuals()
+						render()
+						init()
+						animate()
+
+					updatePhysics()
+					onDocumentMouseMove()
+					onWindowResize()
+					render()
+					addEventListener('keypress')
+					start()
+					buildScene()
+					addVisual()
+					removeVisual()
+					createMesh()
+					generateBolide()
+					addLinearPathProjection()
+					addCollisionBehavior()
+
+
 		*/
+			var SHADOW_MAP_WIDTH = 512, SHADOW_MAP_HEIGHT = 512, MARGIN = 0,
+				SCREEN_WIDTH = window.innerWidth,
+				SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN, NEAR = 5, FAR = 2000;
+
+			var camera, controls, renderer, container, sceneHUD, cameraOrtho,
+				hudMaterial, mouseX = 0, mouseY = 0, windowHalfX = window.innerWidth/2,
+				windowHalfY = window.innerHeight/2;
+
+			var world;
+
+
 			var settings = {
 				stepFrequency: 60,
 				quatNormalizeSkip: 2,
@@ -75,10 +113,11 @@
 			};
 
 
-			/*THREE*/
-
 			/*CANNON*/
 			startCannon();
+
+			/*THREE*/
+
 
 
 
@@ -90,6 +129,8 @@
 
 			function startCannon() {	//functional copy of CANNON.Demo()
 				var startFunction = this;
+
+
 
 				this.addScene = addScene;
 				this.restartCurrentScene = restartCurrentScene;
@@ -118,7 +159,7 @@
 		    this.currentMaterial = solidMaterial;
 		    var particleMaterial = this.particleMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
 
-				var world = new CANNON.World();
+				world = new CANNON.World();
 				world.broadphase = new CANNON.NaiveBroadphase();
 
 
@@ -197,6 +238,12 @@
 					// it's necessary here.
 				}
 
+				function render() {
+					controls.update();
+					renderer.clear();
+					renderer.render(settings.scene, camera);
+				}
+
 				if (!Detector.webgl) {
 					Detector.addGetWebGLMessage();
 				}
@@ -210,9 +257,165 @@
 					camera.position.set(0,30,20);
 					scene = new THREE.Scene();
 					scene.add(camera);
+					//RENDERER
+					renderer = new THREE.WebGLRenderer( {
+						clearcolor: 0x000000, clearAlpha: 1, antialias: false
+					});
+					renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+					renderer.domElement.style.position = "relative";
+					renderer.domElement.style.top = MARGIN + 'px';
+					container.appendChild(renderer.domElement);
+
+					//INFO
+					info = document.createElement( 'div' );
+	        info.style.position = 'absolute';
+	        info.style.top = '10px';
+	        info.style.width = '100%';
+	        info.style.textAlign = 'center';
+	        info.innerHTML = '<a href="http://github.com/schteppe/cannon.js">cannon.js</a> - javascript 3d physics';
+	        container.appendChild( info );
+
 					document.addEventListener('mousemove',onDocumentMouseMove);
 					window.addEventListener('resize',onWindowResize);
-					var renderFolder = gui.addFolder('Rendering');
+
+					if(window.dat!=undefined){
+							gui = new dat.GUI();
+
+							gui.domElement.parentNode.style.zIndex=120;
+
+							// Render mode
+							var rf = gui.addFolder('Rendering');
+
+							rf.add(settings,'rendermode',{Solid:"solid",Wireframe:"wireframe"}).onChange(function(mode){
+									setRenderMode(mode);
+							});
+							rf.add(settings,'contacts');
+							rf.add(settings,'cm2contact');
+							rf.add(settings,'normals');
+							rf.add(settings,'constraints');
+							rf.add(settings,'axes');
+							rf.add(settings,'particleSize').min(0).max(1).onChange(function(size){
+									for(var i=0; i<visuals.length; i++){
+											if(bodies[i] instanceof CANNON.Particle)
+													visuals[i].scale.set(size,size,size);
+									}
+							});
+							rf.add(settings,'shadows').onChange(function(shadows){
+									if(shadows){
+											renderer.shadowMapAutoUpdate = true;
+									} else {
+											renderer.shadowMapAutoUpdate = false;
+											renderer.clearTarget( light.shadowMap );
+									}
+							});
+							rf.add(settings,'aabbs');
+							rf.add(settings,'profiling').onChange(function(profiling){
+									if(profiling){
+											world.doProfiling = true;
+											smoothie.start();
+											smoothieCanvas.style.display = "block";
+									} else {
+											world.doProfiling = false;
+											smoothie.stop();
+											smoothieCanvas.style.display = "none";
+									}
+
+							});
+
+							// World folder
+							var wf = gui.addFolder('World');
+							// Pause
+							wf.add(settings, 'paused').onChange(function(p){
+									/*if(p){
+											smoothie.stop();
+									} else {
+											smoothie.start();
+									}*/
+							});
+							wf.add(settings, 'stepFrequency',60,60*10).step(60);
+							var maxg = 100;
+							wf.add(settings, 'gx',-maxg,maxg).onChange(function(gx){
+									if(!isNaN(gx)){
+											world.gravity.set(gx,settings.gy,settings.gz);
+									}
+							});
+							wf.add(settings, 'gy',-maxg,maxg).onChange(function(gy){
+									if(!isNaN(gy))
+											world.gravity.set(settings.gx,gy,settings.gz);
+							});
+							wf.add(settings, 'gz',-maxg,maxg).onChange(function(gz){
+									if(!isNaN(gz))
+											world.gravity.set(settings.gx,settings.gy,gz);
+							});
+							wf.add(settings, 'quatNormalizeSkip',0,50).step(1).onChange(function(skip){
+									if(!isNaN(skip)){
+											world.quatNormalizeSkip = skip;
+									}
+							});
+							wf.add(settings, 'quatNormalizeFast').onChange(function(fast){
+									world.quatNormalizeFast = !!fast;
+							});
+
+							// Solver folder
+							var sf = gui.addFolder('Solver');
+							sf.add(settings, 'iterations',1,50).step(1).onChange(function(it){
+									world.solver.iterations = it;
+							});
+							sf.add(settings, 'k',10,10000000).onChange(function(k){
+									that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
+							});
+							sf.add(settings, 'd',0,20).step(0.1).onChange(function(d){
+									that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
+							});
+							sf.add(settings, 'tolerance',0.0,10.0).step(0.01).onChange(function(t){
+									world.solver.tolerance = t;
+							});
+
+							// Scene picker
+							sceneFolder = gui.addFolder('Scenes');
+
+							//Spawn Bolides
+							var bf = gui.addFolder('Spawn Bolides');
+
+							bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){
+
+							});
+
+							bf.add(settings, 'redEarth').onChange(function(redEarth){
+
+							});
+
+							bf.add(settings, 'frequency').onChange(function(frequency){
+							});
+
+							bf.add(settings, 'speed').onChange(function(speed){
+
+							});
+
+							bf.add(settings, 'size').onChange(function(size){
+
+							});
+
+							bf.add(settings, 'vx').onChange(function(vx){
+							});
+							bf.add(settings, 'vy').onChange(function(vy){
+							});
+							bf.add(settings, 'vz').onChange(function(vz){
+							});
+							bf.add(settings, 'a').onChange(function(a){
+							});
+							bf.add(settings, 'e').onChange(function(e){
+							});
+							bf.add(settings, 'i').onChange(function(i){
+							});
+							bf.add(settings, 'O').onChange(function(O){
+							});
+							bf.add(settings, 'o').onChange(function(o){
+							});
+
+							sceneFolder.open();
+					}
+					/*var renderFolder = gui.addFolder('Rendering');
 
 					renderFolder.add(settings,'rendermode',{Solid:"solid",Wireframe:"wireframe"}).onChange(function(mode){
 						setRenderMode(mode);
@@ -235,37 +438,7 @@
 							renderer.shadowMapAutoUpdate = false;
 							renderer.clearTarget( light.shadowMap );
 						}
-					});
-					var worldFolder = gui.addFolder('World');
-					worldFolder.add(settings, 'paused').onChange(function(p){
-						//...
-					});
-					worldFolder.add(settings, 'stepFrequency', 60, 60*10).step(60);
-					var solverFolder = gui.addFolder('Solver');
-					solverFolder.add(settings,'iterations',1,50).step(1).onChange(function(it) {
-						world.solver.iterations = it;
-					});
-					sf.add(settings, 'k',10,10000000).onChange(function(k){
-						that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
-					});
-					sf.add(settings, 'd',0,20).step(0.1).onChange(function(d){
-						that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
-					});
-					sf.add(settings, 'tolerance',0.0,10.0).step(0.01).onChange(function(t){
-						world.solver.tolerance = t;
-					});
-					sceneFolder = gui.addFolder('Scenes');
-					var bf = gui.addFolder('Spawn Bolides');
-
-					bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){});
-					bf.add(settings, 'redEarth').onChange(function(redEarth){});
-					bf.add(settings, 'frequency').onChange(function(frequency){});
-					bf.add(settings, 'speed').onChange(function(speed){});
-					bf.add(settings, 'size').onChange(function(size){});
-					bf.add(settings, 'vx').onChange(function(vx){});
-					bf.add(settings, 'vy').onChange(function(vy){});
-					bf.add(settings, 'vz').onChange(function(vz){});
-					sceneFolder.open();
+					});*/
 
 					// Trackball controls
 					controls = new THREE.TrackballControls( camera, renderer.domElement );
@@ -292,6 +465,10 @@
 					}
 					render();
 				}
+
+				init();
+				animate();
+
 			}
 			/************************************************************************/
 			/*                         START CANNON - end                           */
