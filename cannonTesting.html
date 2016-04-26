@@ -37,7 +37,7 @@
 
 				function initCannon() {
 					world = new CANNON.World();
-					world.gravity.set(-3,0,-60);
+					world.gravity.set(0,0,0);
 					world.broadphase = new CANNON.NaiveBroadphase();
 					world.solver.iterations = 10;
 
@@ -46,10 +46,10 @@
 					mediumSphere = new CANNON.Sphere(3);
 					largeSphere = new CANNON.Sphere(7);
 
-					boxBody = new CANNON.Body( { mass: 1 });
-					sSphereBody = new CANNON.Body( { mass: 3 });
-					mSphereBody = new CANNON.Body( { mass: 5 });
-					lSphereBody = new CANNON.Body( { mass: 9 });
+					boxBody = new CANNON.Body( { mass: 0 });
+					sSphereBody = new CANNON.Body( { mass: 0 });
+					mSphereBody = new CANNON.Body( { mass: 40000000 });
+					lSphereBody = new CANNON.Body( { mass: 400000000 });
 
 					//To add angular velocity, use Body.angularVelocity.set().
 					//See Body docs on cannonjs.org for other functions as well.
@@ -75,7 +75,7 @@
 					earthLoader.load(
 						'from-braindump/Explosion-Source/textures/earth_big.jpg',
 						function( texture ) {
-							var earthGeo = new THREE.SphereGeometry(3,28,28); 
+							var earthGeo = new THREE.SphereGeometry(3,28,28);
 							var material = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
 							var mesh = new THREE.Mesh(earthGeo, material);
 							group.add(mesh);
@@ -106,8 +106,8 @@
 					//controls.onMouseMove(controls.update());
 					//controls.autoRotate = true;
 					//controls.autoRotateSpeed = Math.sin(Math.random() * 4)
-					controls.minDistance = 10
-					controls.maxDistance = 100
+					controls.minDistance = 10;
+					controls.maxDistance = 100;
 					scene.add(camera);
 
 
@@ -154,30 +154,30 @@
 				function updatePhysics() {
 					world.step(timeStep);
 
-					boxMesh.position.set(0,0,0);
+					//boxMesh.position.set(0,0,0);
 					//boxMesh.quaternion.copy(boxBody.quaternion);
 
-					sSphereMesh.position.set(12,0,0);
+					//sSphereMesh.position.set(12,0,0);
 					//sSphereMesh.quaternion.copy(sSphereBody.quaternion);
 
-					mSphereMesh.position.set(-6,0,0);
+					//mSphereMesh.position.set(-6,0,0);
 					//mSphereMesh.quaternion.copy(mSphereBody.quaternion);
 
-					lSphereMesh.position.set(0,15,0);
+					//lSphereMesh.position.set(0,15,0);
 					//lSphereMesh.quaternion.copy(mSphereBody.quaternion);
 
 
-					/*boxMesh.position.copy(boxBody.position);
-					boxMesh.quaternion.copy(boxBody.quaternion);
+					boxMesh.position.copy(boxBody.position);
+					//boxMesh.quaternion.copy(boxBody.quaternion);
 
 					sSphereMesh.position.copy(sSphereBody.position);
-					sSphereMesh.quaternion.copy(sSphereBody.quaternion);
+					//sSphereMesh.quaternion.copy(sSphereBody.quaternion);
 
 					mSphereMesh.position.copy(mSphereBody.position);
-					mSphereMesh.quaternion.copy(mSphereBody.quaternion);
+					//mSphereMesh.quaternion.copy(mSphereBody.quaternion);
 
 					lSphereMesh.position.copy(lSphereBody.position);
-					lSphereMesh.quaternion.copy(lSphereBody.quaternion);*/
+					//lSphereMesh.quaternion.copy(lSphereBody.quaternion);*/
 				}
 
 				function render() {
