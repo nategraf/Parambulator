@@ -34,11 +34,11 @@ CANNON.Demo = function(options){
         size: .5,
         redEarth: true, 
         frequency: 30, 
-        speed: 10, 
-        vx: 1,
-        vy: 1,
-        vz: 1,
-        a: 5, 
+        //speed: 10, 
+        //vx: 1,
+        //vy: 1,
+        //vz: 1,
+        a: 10, 
         e: .002, 
         i: 90, 
         O: 1, 
@@ -708,20 +708,20 @@ CANNON.Demo = function(options){
             bf.add(settings, 'frequency').onChange(function(frequency){
             });
 
-            bf.add(settings, 'speed').onChange(function(speed){
-               
-            });
+            //bf.add(settings, 'speed').onChange(function(speed){
+            //   
+            //});
 
             bf.add(settings, 'size').onChange(function(size){
                
             });
 
-            bf.add(settings, 'vx').onChange(function(vx){
-            });
-            bf.add(settings, 'vy').onChange(function(vy){
-            });
-            bf.add(settings, 'vz').onChange(function(vz){
-            });
+            //bf.add(settings, 'vx').onChange(function(vx){
+            //});
+            //bf.add(settings, 'vy').onChange(function(vy){
+            //});
+            //bf.add(settings, 'vz').onChange(function(vz){
+            //});
             bf.add(settings, 'a').onChange(function(a){
             });
             bf.add(settings, 'e').onChange(function(e){
@@ -986,21 +986,21 @@ CANNON.Demo.prototype.getFrequency = function(){
     return this.settings.frequency; 
 }
 
-CANNON.Demo.prototype.getSpeed = function(){
-    return this.settings.speed;  
-}
+//CANNON.Demo.prototype.getSpeed = function(){
+//    return this.settings.speed;  
+//}
 
-CANNON.Demo.prototype.getVX = function(){
-    return this.settings.vx; 
-}
+//CANNON.Demo.prototype.getVX = function(){
+//    return this.settings.vx; 
+//}
 
-CANNON.Demo.prototype.getVY = function(){
-    return this.settings.vy; 
-}
+//CANNON.Demo.prototype.getVY = function(){
+//    return this.settings.vy; 
+//}
 
-CANNON.Demo.prototype.getVZ = function(){
-    return this.settings.vz; 
-}
+//CANNON.Demo.prototype.getVZ = function(){
+//    return this.settings.vz; 
+//}
 
 CANNON.Demo.prototype.getA = function(){
     return this.settings.a; 
