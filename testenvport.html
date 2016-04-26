@@ -1,786 +1,298 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Test Environment Port</title>
-		<meta charset="utf-8">
+  <head>
+    <title>cannon.js - callbacks demo</title>
+    <meta charset="utf-8">
     <link rel="stylesheet" href="css/style.css" type="text/css"/>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	</head>
-	<body>
-		<script src="js/cannon.min.js"></script>
-		<script src="js/dat.gui.js"></script>
-		<script src="three.js-master/build/three.js"></script>
-		<script src="js/TrackballControls.js"></script>
-		<script src="js/Detector.js"></script>
-		<script src="js/Stats.js"></script>
-		<script src="js/smoothie.js"></script>
-		<script src="js/OrbitControls.js"></script>
-		<script src="three.js-master/examples/js/controls/MouseControls.js"></script>
-		<script>
-		/*
-				TODO: 1. Take most of the Demo.js code and extract it out of the
-									Demo object. [DONE]
-							2. Copy over the code/logic from testenv.html [DONE]
-							3. Get the webpage to work identically to the way that
-									testenv.html works.
-							4. Gradually reduce this testenvport.html codebase to only what
-									is necessary to keep the simulation running.
-							5. Re-name testenvport.html to something more release-ready.
+  </head>
+  <body>
+    <script src="js/cannon.min.js"></script>
+    <script src="js/cannon.demo.js"></script>
+    <script src="js/dat.gui.js"></script>
+    <script src="js/three.js"></script>
+    <script src="js/TrackballControls.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/Stats.js"></script>
+    <script src="js/smoothie.js"></script>
+    <script src="dist/orb.min.js"></script>
+    <script>
+     	/**
+     	* A demo showing how to use the preStep callback to add a force to a body.
+     	* This will act like a force field.
+     	*/
 
-				NOTE: As of 4:22pm 4/24 I am removing the option to render in wirefram
+      const ZEROVEC = new CANNON.Vec3(0,0,0);
+      const XUNITVEC = new CANNON.Vec3(1,0,0);
+      const YUNITVEC = new CANNON.Vec3(0,1,0);
+      const ZUNITVEC = new CANNON.Vec3(0,0,1);
+      const GM = 300;
+      const M1 = GM/orb.constants.common.G;
+      console.log(GM);
+      console.log(M1);
 
-				NOTE: As of 5:27pm 4/24 I am done copying the necessary components
-							from Demo.js, I think. I have also copied a good portion of the
-							original testenv.html, the two parts just aren't totally
-							integrated together do to scoping issues that weren't a problem
-							in the original setup.
+      var demo = new CANNON.Demo();
 
-				NOTE: As of 2:35pm 4/25, testenvport.html has the following functions:
-					startCannon()
-						updategui()
-						addScene()
-						restartCurrentScene()
-						ensureNonZero()
-						updateVisuals()
-						render()
-						init()
-						animate()
+			/**************************/
+			/* createEllipse() - BEGIN*/
+			/**************************/
+      CANNON.Trimesh.createEllipse = function (semimajor, eccentricity, tube,
+				radialSegments, tubularSegments, arc) {
 
-					updatePhysics()
-					onDocumentMouseMove()
-					onWindowResize()
-					render()
-					addEventListener('keypress')
-					start()
-					buildScene()
-					addVisual()
-					removeVisual()
-					createMesh()
-					generateBolide()
-					addLinearPathProjection()
-					addCollisionBehavior()
+        semimajor = semimajor || 1;
+        eccentricity = eccentricity || 0;
+        tube = tube || 0.5;
+        radialSegments = radialSegments || 8;
+        tubularSegments = tubularSegments || 6;
+        arc = arc || Math.PI * 2;
 
+        var vertices = [];
+        var indices = [];
 
-		*/
-			var SHADOW_MAP_WIDTH,
-					SHADOW_MAP_HEIGHT,
-					MARGIN,
-					SCREEN_WIDTH,
-					SCREEN_HEIGHT,
-					NEAR,
-					FAR,
-					settings,
-					sceneFolder,
-					scenePicker,
-					materialColor,
-					solidMaterial,
-					particleMaterial,
-					world,
-					camera,
-					controls,
-					renderer,
-					container,
-					sceneHUD,
-					cameraOrtho,
-					hudMaterial,
-					mouseX,
-					mouseY,
-					windowHalfX,
-					windowHalfY,
-					bodies,
-					visuals,
-					scenes,
-					gui,
-					lastCallTime,
-					material,
-					geometry,
-					mesh,
-					earthSphere,
-					earthBody,
-					earthGeo,
-					earthMaterial,
-					earthMesh,
-					scene;
+        for ( var j = 0; j <= radialSegments; j ++ ) {
+          for ( var i = 0; i <= tubularSegments; i ++ ) {
+            var u = i / tubularSegments * arc;
+            var v = j / radialSegments * Math.PI * 2;
 
-				var mSphereGeo, mSphereMat, mSphereMesh;
+            let radius = (semimajor * (1 - Math.pow(eccentricity,2)))/(1 +
+							eccentricity * Math.cos(u));
 
-			if (!Detector.webgl) {
-				Detector.addGetWebGLMessage();
-			}
+            var x = ( radius + tube * Math.cos( v ) ) * Math.cos( u );
+            var y = ( radius + tube * Math.cos( v ) ) * Math.sin( u );
+            var z = tube * Math.sin( v );
 
-			/*GUI AND SETTINGS INITIALIZATION*/
-			initGUIandSettings();
-
-			/*PHYSICS INITIALIZATION*/
-			initCannon();
-
-			/*VISUALS INITIALIZATION*/
-			initThree();
-
-			if (!Detector.webgl) {
-				Detector.addGetWebGLMessage();
-			}
-
-			animate();
-
-
-
-
-			/************************************************************************/
-			/*                      initGUIandSettings - BEGIN                      */
-			/************************************************************************/
-			function initGUIandSettings() {
-				console.log('entered initGUIandSettings()');
-				var initGUIandSettings = this;
-
-				lastCallTime = 0;
-				mouseX = 0;
-				mouseY = 0;
-				windowHalfX = window.innerWidth/2;
-				windowHalfY = window.innerHeight/2;
-				SHADOW_MAP_WIDTH = 512;
-				SHADOW_MAP_HEIGHT = 512;
-				MARGIN = 0;
-				SCREEN_WIDTH = window.innerWidth;
-				SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
-				NEAR = 5;
-				FAR = 2000;
-				settings = {
-					stepFrequency: 60,
-					quatNormalizeSkip: 2,
-					quatNormalizeFast: true,
-					gx: 0,
-					gy: 0,
-					gz: 0,
-					iterations: 3,
-					tolerance: 0.0001,
-					spawnBolides: false,
-					size: 0.5,
-					redEarth: false,
-					frequency: 30,
-					speed: 10,
-					a: 5,
-					e: 0.002,
-					i: 90,
-					O: 1,
-					o: 1,
-					vx: 1,
-					vy: 1,
-					vz: 1,
-					k: 1e6,
-					d: 3,
-					//scene: 0,
-					paused: false,
-					rendermode: "solid",
-					constraints: false,
-					contacts: false,  // Contact points
-					cm2contact: false, // center of mass to contact points
-					normals: false, // contact normals
-					axes: false, // "local" frame axes
-					particleSize: 0.1,
-					shadows: false,
-					aabbs: false,
-					profiling: false,
-					maxSubSteps:3
-				};
-				gui = new dat.GUI();
-
-				if(window.dat!=undefined){
-						gui.domElement.parentNode.style.zIndex=120;
-
-						// World folder
-						var wf = gui.addFolder('World');
-						// Pause
-						wf.add(settings, 'paused').onChange(function(p){});
-						wf.add(settings, 'stepFrequency',60,60*10).step(60);
-						var maxg = 100;
-						wf.add(settings, 'gx',-maxg,maxg).onChange(function(gx){
-								if(!isNaN(gx)){
-										world.gravity.set(gx,settings.gy,settings.gz);
-								}
-						});
-						wf.add(settings, 'gy',-maxg,maxg).onChange(function(gy){
-								if(!isNaN(gy))
-										world.gravity.set(settings.gx,gy,settings.gz);
-						});
-						wf.add(settings, 'gz',-maxg,maxg).onChange(function(gz){
-								if(!isNaN(gz))
-										world.gravity.set(settings.gx,settings.gy,gz);
-						});
-						wf.add(settings, 'quatNormalizeSkip',0,50).step(1).onChange(function(skip){
-								if(!isNaN(skip)){
-										world.quatNormalizeSkip = skip;
-								}
-						});
-						wf.add(settings, 'quatNormalizeFast').onChange(function(fast){
-								world.quatNormalizeFast = !!fast;
-						});
-
-						// Solver folder
-						var sf = gui.addFolder('Solver');
-						sf.add(settings, 'iterations',1,50).step(1).onChange(function(it){
-								world.solver.iterations = it;
-						});
-						sf.add(settings, 'k',10,10000000).onChange(function(k){
-								that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
-						});
-						sf.add(settings, 'd',0,20).step(0.1).onChange(function(d){
-								that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
-						});
-						sf.add(settings, 'tolerance',0.0,10.0).step(0.01).onChange(function(t){
-								world.solver.tolerance = t;
-						});
-
-						//Spawn Bolides
-						var bf = gui.addFolder('Spawn Bolides');
-
-						//XXX I think things need to go in these function brackets...
-						bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){});
-						bf.add(settings, 'redEarth').onChange(function(redEarth){});
-						bf.add(settings, 'frequency').onChange(function(frequency){});
-						bf.add(settings, 'speed').onChange(function(speed){});
-						bf.add(settings, 'size').onChange(function(size){});
-						bf.add(settings, 'vx').onChange(function(vx){});
-						bf.add(settings, 'vy').onChange(function(vy){});
-						bf.add(settings, 'vz').onChange(function(vz){});
-						bf.add(settings, 'a').onChange(function(a){});
-						bf.add(settings, 'e').onChange(function(e){});
-						bf.add(settings, 'i').onChange(function(i){});
-						bf.add(settings, 'O').onChange(function(O){});
-						bf.add(settings, 'o').onChange(function(o){});
-
-						//sceneFolder.open();
-				}
-
-				container = document.createElement('div');
-				document.body.appendChild(container);
-				/*info = document.createElement( 'div' );
-				info.style.position = 'absolute';
-				info.style.top = '10px';
-				info.style.width = '100%';
-				info.style.textAlign = 'center';
-				info.innerHTML = '<a href="http://github.com/schteppe/cannon.js">cannon.js</a> - javascript 3d physics';
-				container.appendChild( info );*/
-				document.addEventListener('mousemove',onDocumentMouseMove);
-				window.addEventListener('resize',onWindowResize);
-
-				//XXX needs to be moved somewhere where it will be re-evaluated frequently
-				if(settings.stepFrequency % 60 !== 0){
-						settings.stepFrequency = 60;
-						throw new Error("stepFrequency must be a multiple of 60." +
-							"Setting to 60.");
-				}
-
-			}
-			/************************************************************************/
-			/*                       initGUIandSettings - END                       */
-			/************************************************************************/
-
-
-
-
-			/************************************************************************/
-			/*                         initCannon - BEGIN                          */
-			/************************************************************************/
-			function initCannon() {
-				console.log('entered initCannon()');
-				var initCannon = this;
-				this.addScene = addScene;
-				this.restartCurrentScene = restartCurrentScene;
-				//this.changeScene = changeScene;
-				this.start = start;
-				bodies = [];
-				world = new CANNON.World();
-				world.broadphase = new CANNON.NaiveBroadphase();
-				world.solver.iterations = 10;
-
-				earthSphere = new CANNON.Sphere(3);
-				earthBody = new CANNON.Body( { mass: 0 });
-				earthBody.addShape(earthSphere);
-				world.addBody(earthBody);
-
-				earthBody.position.set(0,0,0);
-
-				bodies.push(earthBody);
-			}
-			/************************************************************************/
-			/*                          initCannon - END                            */
-			/************************************************************************/
-
-
-
-
-			/************************************************************************/
-			/*												initThree - BEGIN
-			/************************************************************************/
-			function initThree() {
-				console.log('entered initThree()');
-				visuals = [];
-				scenes = [];
-				scenePicker = {};
-
-				scene = new THREE.Scene();
-				scenes.push(scene);
-				//group = new THREE.Group();
-				//scene.add(group);
-				/*var earthLoader = new THREE.TextureLoader();
-				earthLoader.load(
-					'from-braindump/Explosion-Source/textures/earth_big.jpg',
-					function( texture ) {
-						earthGeo = new THREE.SphereGeometry(3,28,28);
-						earthMaterial = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
-						earthMesh = new THREE.Mesh(earthGeo, earthMaterial);
-						group.add(earthMesh);
-				});*/
-
-
-				mSphereGeo = new THREE.SphereGeometry(2, 28, 28);
-				mSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
-					wireframe: true });
-				mSphereMesh = new THREE.Mesh( mSphereGeo, mSphereMat );
-				mSphereMesh.position.set(0,0,0);
-				scene.add(mSphereMesh);
-				visuals.push(mSphereMesh);
-
-				materialColor = 0xdddddd;
-				solidMaterial =
-					new THREE.MeshLambertMaterial( { color: materialColor } );
-				this.currentMaterial = solidMaterial;
-				particleMaterial = this.particleMaterial =
-					new THREE.MeshLambertMaterial( { color: 0xff0000 } );
-
-				camera = new THREE.PerspectiveCamera(100000, SCREEN_WIDTH/SCREEN_HEIGHT,
-					NEAR, FAR);
-				//camera.up.set(0,0,1);
-				camera.position.set(0,30,20);
-				scene = new THREE.Scene();
-				scene.add(camera);
-
-				//RENDERER
-				renderer = new THREE.WebGLRenderer();
-
-				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-				//renderer.domElement.style.position = "relative";
-				//renderer.domElement.style.top = MARGIN + 'px';
-				container.appendChild(renderer.domElement);
-
-				// Trackball controls
-				/*controls = new THREE.TrackballControls( camera, renderer.domElement );
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.2;
-				controls.noZoom = false;
-				controls.noPan = false;
-				controls.staticMoving = false;
-				controls.dynamicDampingFactor = 0.3;
-				var radius = 100;
-				controls.minDistance = NEAR;
-				controls.maxDistance = FAR * 100;
-				controls.screen.width = SCREEN_WIDTH;
-				controls.screen.height = SCREEN_HEIGHT;*/
-				controls = new THREE.OrbitControls(camera);
-				controls.minDistance = 10;
-				controls.maxDistance = 100;
-			}
-			/************************************************************************/
-			/*												initThree - END
-			/************************************************************************/
-
-
-
-
-			//XXX probably needs to be re-done
-			function updategui() {
-				console.log('entered updategui()');
-				if(gui){
-					// First level
-					for (var i in gui.__controllers){
-						gui.__controllers[i].updateDisplay();
+            vertices.push( x, y, z );
 					}
+        }
 
-					// Second level
-					for (var f in gui.__folders){
-						for (var i in gui.__folders[f].__controllers){
-							gui.__folders[f].__controllers[i].updateDisplay();
-						}
-					}
-				}
-			}
+        for ( var j = 1; j <= radialSegments; j ++ ) {
+          for ( var i = 1; i <= tubularSegments; i ++ ) {
+            var a = ( tubularSegments + 1 ) * j + i - 1;
+            var b = ( tubularSegments + 1 ) * ( j - 1 ) + i - 1;
+            var c = ( tubularSegments + 1 ) * ( j - 1 ) + i;
+            var d = ( tubularSegments + 1 ) * j + i;
 
-			function addScene(sceneName, initFunction) {
-				console.log('entered addScene()');
-				if (typeof(sceneName) !== "string") {
-					throw new Error("Argument `sceneName` in function `addScene` must be a string.");
-				} else if (typeof(initFunction) !== "function") {
-					throw new Error("Argument `initFunction` in function 'addScene' must be a function.");
-				}
-
-				scenes.push(initFunction);
-				var index = scenes.length-1;
-				scenePicker[sceneName] = function() {
-					that.dispatchEvent({ type: 'destroy' });
-					settings.paused = false;
-					updategui();
-					buildScene(n);
-				}
-				sceneFolder.add(scenePicker,sceneName);
-			}
-
-			function restartCurrentScene() {
-				console.log('entered restartCurrentScene()');
-				var N = bodies.length;
-				for (var i = 0; i < N; i++) {
-					var b = bodies[i];
-					b.position.copy(b.initPosition);
-					b.velocity.copy(b.initVelocity);
-					if (b.initAngularVelocity) {
-						b.angularVelocity.copy(b.initAngularVelocity);
-						b.quaternion.copy(b.initQuaternion);
-					}
-				}
-			}
-
-			
-		
-
-			function updateVisuals(){
-				//console.log('entered updateVisuals()');
-				var N = bodies.length;
-
-				// Read position data into visuals
-				for(var i=0; i<N; i++){
-					var b = bodies[i], visual = visuals[i];
-					visual.position.copy(b.position);
-					if(b.quaternion){
-						visual.quaternion.copy(b.quaternion);
-					}
-				}
-				//NOTE there was a lot more here in cannon.demo.js but I'm not sure
-				// it's necessary here.
-			}
-
-			function render() {
-				//console.log('entered render()');
-				//controls.update();
-				//renderer.clear();
-				renderer.render(scene, camera);
-			}
-
-			function animate() {
-				//console.log('entered animate()');
-				requestAnimationFrame(animate);
-				/*if(!settings.paused) {
-					//updateVisuals();
-					updatePhysics();
-				}*/
-				updateVisuals();
-				updatePhysics();
-				render();
-			}
-
-			function updatePhysics() {
-				//console.log('entered updatePhysics()');
-				/*var timeStep = 1/settings.stepFrequency;
-				var now = Date.now() / 1000;
-				if(!lastCallTime) {
-					world.step(timeStep);
-					mSphereMesh.position.set(0,0,0);
-					return;
-				}
-				var timeSinceLastCall = now - lastCallTime;
-				world.step(timeStep, timeSinceLastCall, settings.maxSubSteps);
-				lastCallTime = now;*/
-				world.step(1/settings.stepFrequency);
-				mSphereMesh.position.set(0,0,0);
-			}
-
-			function onDocumentMouseMove( event ) {
-        mouseX = ( event.clientX - windowHalfX );
-        mouseY = ( event.clientY - windowHalfY );
-    	}
-
-			function onWindowResize( event ) {
-        SCREEN_WIDTH = window.innerWidth;
-        SCREEN_HEIGHT = window.innerHeight;
-
-        renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
-
-        camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
-        camera.updateProjectionMatrix();
-
-        controls.screen.width = SCREEN_WIDTH;
-        controls.screen.height = SCREEN_HEIGHT;
-
-        camera.radius = ( SCREEN_WIDTH + SCREEN_HEIGHT ) / 4;
-    	}
-
-			document.addEventListener('keypress',function(e){
-        if(e.keyCode){
-          switch(e.keyCode){
-            case 32: // Space - restart
-              restartCurrentScene();
-              break;
-            case 104: // h - toggle widgets
-              if(stats.domElement.style.display=="none"){
-                stats.domElement.style.display = "block";
-                info.style.display = "block";
-              } else {
-                stats.domElement.style.display = "none";
-                info.style.display = "none";
-              }
-              break;
-            case 97: // a - AABBs
-            	settings.aabbs = !settings.aabbs;
-              updategui();
-              break;
-            case 99: // c - constraints
-              settings.constraints = !settings.constraints;
-              updategui();
-              break;
-            case 112: // p
-              settings.paused = !settings.paused;
-              updategui();
-              break;
-            case 115: // s
-              var timeStep = 1 / settings.stepFrequency;
-              world.step(timeStep);
-              updateVisuals();
-              break;
-            case 109: // m - toggle materials
-              var idx = renderModes.indexOf(settings.rendermode);
-              idx++;
-              idx = idx % renderModes.length; // begin at 0 if we exceeded number of modes
-              setRenderMode(renderModes[idx]);
-              updategui();
-              break;
-            /*case 49:
-            case 50:
-            case 51:
-            case 52:
-            case 53:
-            case 54:
-            case 55:
-            case 56:
-            case 57:
-              // Change scene
-              // Only for numbers 1-9 and if no input field is active
-              if(scenes.length > e.keyCode-49 && !document.activeElement.localName.match(/input/)){
-                changeScene(e.keyCode-49);
-              }
-              break;*/
+            indices.push(a, b, d);
+            indices.push(b, c, d);
           }
         }
-    	});
 
-			//XXX not sure if start() and buildScene() are needed
-			function start() {
-				console.log('entered start()');
-				buildScene(0);
-			}
+        return new CANNON.Trimesh(vertices, indices);
+      };
+			/************************/
+			/* createEllipse() - END*/
+			/************************/
 
-			function buildScene(n) {
-				console.log('entered buildScene()');
-				// Remove current bodies and visuals
-        var num = visuals.length;
-        for(var i=0; i<num; i++){
-            world.remove(bodies.pop());
-            var mesh = visuals.pop();
-            that.scene.remove(mesh);
-        }
-        // Remove all constraints
-        while(world.constraints.length){
-            world.removeConstraint(world.constraints[0]);
-        }
 
-        // Run the user defined "build scene" function
-        scenes[n]();
 
-        // Read the newly set data to the gui
-        settings.iterations = world.solver.iterations;
-        settings.gx = world.gravity.x+0.0;
-        settings.gy = world.gravity.y+0.0;
-        settings.gz = world.gravity.z+0.0;
-        settings.quatNormalizeSkip = world.quatNormalizeSkip;
-        settings.quatNormalizeFast = world.quatNormalizeFast;
-        updategui();
-
-        restartGeometryCaches();
-			}
-
-			function addVisual(body, color, texture) {
-				console.log('entered addVisual()');
-				var s = settings;
-				var mesh;
-				if (body instanceof CANNON.Body) {
-					mesh = shape2mesh(body);
-				}
-				if (mesh) {
-					bodies.push(body);
-					visuals.push(mesh);
-					body.visualref = mesh;
-					body.visualref.visualId = bodies.length - 1;
-					scene.add(mesh);
-				}
-			};
-
-			function removeVisual(body) {
-				console.log('entered removeVisual()');
-				if(body.visualref) {
-					var bds = bodies;
-					var vis = visuals;
-					var old_b = [];
-					var old_v = [];
-					var n = bodies.length;
-
-					for (var i = 0; i < n; i++) {
-						old_b.unshift(bodies.pop());
-						old_v.unshift(bodies.pop());
-					}
-
-					var id = body.visualref.visualId;
-        	for(var j=0; j<old_b.length; j++){
-            if(j !== id){
-              var i = j>id ? j-1 : j;
-              bodies[i] = old_b[j];
-              visuals[i] = old_v[j];
-              bodies[i].visualref = old_b[j].visualref;
-              bodies[i].visualref.visualId = i;
-            }
-        	}
-        	body.visualref.visualId = null;
-        	scene.remove(body.visualref);
-        	body.visualref = null;
-				}
-			};
-
-			function createMesh(shape) {
-				console.log('entered createMesh()');
-				var object = new THREE.Object3D();
-
-				for (var i = 0; i < body.shapes.length; i++) {
-					var shape = body.shapes[i];
-					var mesh, geometry;
-					switch(shape.type) {
-						case CANNON.Shape.types.SPHERE:
-							geometry = new THREE.SphereGeometry(shape.radius, 8, 8);
-							mesh = new THREE.Mesh(geometry, this.currentMaterial) ;
-							break;
-						case CANNON.Shape.types.BOX:
-							geometry = new THREE.BoxGeometry(shape.halfExtents.x*2,
-																							 shape.halfExtents.y*2,
-																							 shape.halfExtents.z*2);
-							mesh = new THREE.Mesh(geometry, this.currentMaterial);
-							break;
-					}
-					mesh.receiveShadow = true;
-					mesh.castShadow = true;
-					if (mesh.children) {
-						for(var k = 0; k < mesh.children.length; k++) {
-							mesh.children[k].receiveShadow = true;
-							mesh.children[k].castShadow = true;
-						}
-					}
-
-					var o = body.shapeOffsets[i];
-					var q = body.shapeOrientations[i];
-					mesh.position.set(o.x, o.y, o.z);
-					mesh.quaterion.set(q.x, q.y, q.z, q.w);
-
-					object.add(mesh);
-				}
-				return obj;
-			}
-
-			function generateBolide(mass) {
-				console.log('entered generateBolide()');
-				var redEarth, size, speed, shape, a, e, i, O, o, cartesian, x, y, z,
-					vx, vy, vz, bolide;
-
-				redEarth = settings.redEarth;
-				size = settings.size;
-				speed = settings.speed;
-				shape = new CANNON.Sphere(size);
-				debugger;
-
-				a = settings.a;
-				e = settings.e;
-				i = settings.i;
-				O = settings.O;
-				o = settings.o;
-				cartesian = orb.position.keplerian(a,e,i,O,o,0,0);
-
-				x = cartesian[0][0];
-				y = cartesian[0][1];
-				z = cartesian[0][2];
-
-				vx = cartesian[1][0]/10000000;
-				vy = cartesian[1][1]/10000000;
-				vz = cartesian[1][2]/10000000;
-
-				bolide = new CANNON.Body( {
-					mass: mass,
-					posiion: new CANNON(Vec3(x,y,z))
-				} );
-
-				bolide.addShape(shape);
-				bolide.velocity.set(-vx*speed,-vy*speed,-vz*speed);
-				bolide.linearDamping = 0.0;
-
-				bolide.preStep = function(){
-					// Get the vector pointing from the moon to the planet center
-					var bolide_to_planet = new CANNON.Vec3();
-					this.position.negate(bolide_to_planet);
-					// Get distance from planet to moon
-					var distance = bolide_to_planet.norm();
-					// Now apply force on moon
-					// Fore is pointing in the moon-planet direction
-					bolide_to_planet.normalize();
-					bolide_to_planet.mult((300*mass)/Math.pow(distance,2),this.force);
-				}
-
-				return bolide;
-			}
-
-			function addLinearPathProjection(body, world) {
-				console.log('entered addLinearPathProjection()');
-          let cylLength = 10;
-          let projectionShape = new CANNON.Cylinder(body.shapes[0].radius, body.shapes[0].radius, cylLength, 20);
-          projectionShape.collisionResponse = false;
-          let projection = new CANNON.Body({
-              mass: 1,
-              collisionFilterGroup: 2,
-              collisionFilterMask: 2,
-              position: body.position
-          });
-          projection.addShape(projectionShape, new CANNON.Vec3(0, 0, cylLength / 2.0));
-          projection.addEventListener("collide", function (e) {
-              let dangerPeriod = body.shapes[0].radius / e.contact.bi.velocity.length(); // Not quite right, but close
-              if (Math.abs((e.contact.ri.length() / e.contact.bi.velocity.length()) - (e.contact.rj.length() / e.contact.bj.velocity.length())) < dangerPeriod) {
-                  console.log("Orbiting body collision predicted");
-                  // TODO: Change color of the orbiting body needs to be added here
-              }
-          });
-          world.addEventListener("postStep", function () {
-              if (world.bodies.indexOf(body) != -1) {
-                  projection.quaternion.setFromVectors(new CANNON.Vec3(0, 0, 1), body.velocity);
-                  projection.velocity.copy(body.velocity);
-              }
-              else {
-                  demo.removeVisual(projection);
-                  world.removeBody(projection);
-                  // TODO This causes a minor error in javascript. Figure out how to fix it
-              }
-          });
-          world.addBody(projection);
+			/*************************************/
+			/* addEllipticalProjection() - BEGIN */
+			/*************************************/
+      function addEllipticalProjection(body, world){
+        let cylLength = 10;
+        let x = [body.position.x, body.position.y, body.position.z];
+        let xDot = [body.velocity.x, body.velocity.y, body.velocity.z];
+        let orbitElems = orb.position.stateToKepler(x, xDot, 0, M1);
+        let projectionShape = CANNON.Trimesh.createEllipse(orbitElems[0],
+					orbitElems[1], body.shapes[0].radius, 8, 32);
+        projectionShape.collisionResponse = false;
+        let projection = new CANNON.Body({
+          mass: 1,
+          collisionFilterGroup: 2,
+          collisionFilterMask: 2
+        });
+        let quat = new CANNON.Quaternion();
+				// TODO fix this
+        quat.setFromEuler(orbitElems[2], -orbitElems[4], orbitElems[3], 'ZYX');
+        projection.addShape(projectionShape, ZEROVEC, quat);
+        world.addEventListener("postStep", function () {
+          if (world.bodies.indexOf(body) != -1) {}
+          else {
+            // If the body no longer exists, delete the projection
+            demo.removeVisual(projection);
+            world.removeBody(projection);
+            // TODO This causes a minor error in javascript. Figure out how to fix it
+          }
+        });
+        world.addBody(projection);
+        demo.addVisual(projection);
       }
+			/***********************************/
+			/* addEllipticalProjection() - END */
+			/***********************************/
 
-			function addCollisionBehavior(body, world) {
-				console.log('entered addCollisionBehavior()');
+
+
+			/**********************************/
+			/* addCollisionBehavior() - BEGIN */
+			/**********************************/
+      function addCollisionBehavior(body, world) {
+        body.addEventListener("collide", function (e) {
+					demo.removeVisual(this); world.remove(this); });
+        }
+			/********************************/
+			/* addCollisionBehavior() - END */
+			/********************************/
+
+
+
+
+      var spawnBolides = true;
+			/****************************/
+			/* generateBolide() - BEGIN */
+			/****************************/
+      function generateBolide(mass){
+        var redEarth = demo.getRedEarth();
+        var size = demo.getSize();
+        var shape = new CANNON.Sphere(size);
+
+        let randomMult = 1;
+
+        var a = demo.getA() + Math.random()*randomMult;
+        var e = demo.getE() + Math.random() * randomMult/5.0;
+        var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+        var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+        var o = orb.common.deg2rad(demo.geto());
+        var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0, 0, M1);
+
+        var x = cartesian[0][0];
+        var y = cartesian[0][1];
+        var z = cartesian[0][2];
+
+        var vx = (cartesian[1][0]);
+        var vy = (cartesian[1][1]);
+        var vz = (cartesian[1][2]);
+        var bolide = new CANNON.Body({
+          mass: mass,
+          position: new CANNON.Vec3(x,y,z)
+        });
+
+        bolide.addShape(shape);
+        bolide.velocity.set(vx,vy,vz);
+        bolide.linearDamping = 0.0;
+
+        bolide.preStep = function(){
+          // Get the vector pointing from the moon to the planet center
+          var bolide_to_planet = new CANNON.Vec3();
+          this.position.negate(bolide_to_planet);
+          // Get distance from planet to moon
+          var distance = bolide_to_planet.length();
+          // Now apply force on moon
+          // Fore is pointing in the moon-planet direction
+          bolide_to_planet.normalize();
+          bolide_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+        }
+
+
+        return bolide;
+      }
+			/**************************/
+			/* generateBolide() - END */
+			/**************************/
+
+
+
+
+			/*************************************/
+			/* addLinearPathProjection() - BEGIN */
+			/*************************************/
+      function addLinearPathProjection(body, world) {
+        let cylLength = 10;
+        let projectionShape = new CANNON.Cylinder(body.shapes[0].radius,
+					 body.shapes[0].radius, cylLength, 20);
+        projectionShape.collisionResponse = false;
+        let projection = new CANNON.Body({
+          mass: 1,
+          collisionFilterGroup: 2,
+          collisionFilterMask: 2,
+          position: body.position
+        });
+        projection.addShape(projectionShape,
+					new CANNON.Vec3(0, 0, cylLength / 2.0));
+        projection.addEventListener("collide", function (e) {
+          let dangerPeriod =
+						body.shapes[0].radius / e.contact.bi.velocity.length(); // Not quite right, but close
+          if (Math.abs((e.contact.ri.length() / e.contact.bi.velocity.length()) - (e.contact.rj.length() / e.contact.bj.velocity.length())) < dangerPeriod) {
+            console.log("Orbiting body collision predicted");
+            // TODO: Change color of the orbiting body needs to be added here
+          }
+        });
+        world.addEventListener("postStep", function () {
+          if (world.bodies.indexOf(body) != -1) {
+            projection.quaternion.setFromVectors(new CANNON.Vec3(0, 0, 1), body.velocity);
+            projection.velocity.copy(body.velocity);
+          } else {
+            demo.removeVisual(projection);
+            world.removeBody(projection);
+            // TODO This causes a minor error in javascript. Figure out how to fix it
+          }
+        });
+      	world.addBody(projection);
+    	}
+			/***********************************/
+			/* addLinearPathProjection() - END */
+			/***********************************/
+
+
+
+
+			/**********************************/
+			/* addCollisionBehavior() - BEGIN */
+			/**********************************/
+      function addCollisionBehavior(body, world) {
           body.addEventListener("collide", function (e) { demo.removeVisual(this); world.remove(this); });
       }
+			/*******************************/
+			/* addCollisionBehavior() - END*/
+			/*******************************/
 
 
 
-		</script>
-	</body>
+
+      var i = 0;
+      demo.addScene("Bolides", function(){
+        var world = demo.getWorld();
+        var moonShape = new CANNON.Sphere(0.5);
+
+				/*
+				* TODO here is where the earth is generated, so here is where the 
+				* textures will go
+				*/
+        var planetShape = new CANNON.Sphere(8);
+        var planet = new CANNON.Body({ mass: 0 });
+        planet.addShape(planetShape);
+
+        // Use the preStep callback to apply the gravity force on the moon.
+        // This callback is evoked each timestep.
+        world.addEventListener("preStep", function() {
+          spawnBolides = demo.getSpawnBolides();
+          var frequency = demo.getFrequency();
+          if(spawnBolides){
+            if((i % frequency) == 0){
+              var bolide = generateBolide(5, moonShape);
+              addEllipticalProjection(bolide, world); // Add the path projections!
+              addCollisionBehavior(bolide, world)
+
+              world.addBody(bolide);
+              demo.addVisual(bolide);
+            }
+        	}
+
+          i++;
+
+        });
+
+        // We add the objects to the world to simulate them
+        //demo.spawnBolide(bolide);
+        world.addBody(planet);
+        //world.addBody(bolide);
+        // And we add them to the demo to make them visible
+        demo.addVisual(planet);
+        //demo.addVisual(bolide);
+        // spawnBolide(bolide);
+      });
+
+      demo.start();
+     </script>
+  </body>
 </html>
