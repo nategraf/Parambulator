@@ -156,7 +156,7 @@
 					tolerance: 0.0001,
 					spawnBolides: false,
 					size: 0.5,
-					redEarth: true,
+					redEarth: false,
 					frequency: 30,
 					speed: 10,
 					a: 5,
@@ -254,13 +254,13 @@
 
 				container = document.createElement('div');
 				document.body.appendChild(container);
-				info = document.createElement( 'div' );
+				/*info = document.createElement( 'div' );
 				info.style.position = 'absolute';
 				info.style.top = '10px';
 				info.style.width = '100%';
 				info.style.textAlign = 'center';
 				info.innerHTML = '<a href="http://github.com/schteppe/cannon.js">cannon.js</a> - javascript 3d physics';
-				container.appendChild( info );
+				container.appendChild( info );*/
 				document.addEventListener('mousemove',onDocumentMouseMove);
 				window.addEventListener('resize',onWindowResize);
 
@@ -440,21 +440,11 @@
 				}
 			}
 
-			function ensureNonZero(vector3) {
-				console.log('entered ensureNonZero()');
-				if (vector3.x === 0.0) {
-					vector3.x = 1e-6;
-				}
-				if (vector3.y === 0.0) {
-					vector3.y = 1e-6;
-				}
-				if (vector3.z === 0.0) {
-					vector3.z = 1e-6;
-				}
-			}
+			
+		
 
 			function updateVisuals(){
-				console.log('entered updateVisuals()');
+				//console.log('entered updateVisuals()');
 				var N = bodies.length;
 
 				// Read position data into visuals
@@ -477,7 +467,7 @@
 			}
 
 			function animate() {
-				console.log('entered animate()');
+				//console.log('entered animate()');
 				requestAnimationFrame(animate);
 				/*if(!settings.paused) {
 					//updateVisuals();

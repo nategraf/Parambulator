@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Test Environment Port</title>
+		<meta charset="utf-8">
+    <link rel="stylesheet" href="css/style.css" type="text/css"/>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	</head>
+	<body>
+		<script src="js/cannon.min.js"></script>
+		<script src="js/dat.gui.js"></script>
+		<script src="three.js-master/build/three.min.js"></script>
+		<script src="js/TrackballControls.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="three.js-master/examples/js/controls/MouseControls.js"></script>
+		<script>
+			initDependencies();
+			initGUI();
+			initVisuals();
+			initPhysics();
+			animate();
+		
+		
+			var SCREEN_MAX_WIDTH, SCREEN_MAX_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, 
+				NEAR, FAR, MARGIN;
+				
+			var world, bodies, visuals, gui, lastCallTime, earthShape, earthBody,
+				earthGeometry, earthMaterial, earthTexture, earthMesh, camera, scene, 
+				group, controls, renderer, hudMaterial, mouseX, mouseY, windowHalfX, 
+				windowHalfY;
+			
+			var	settings;
+		
+			function initDependencies() {
+				SHADOW_MAP_WIDTH = 512;
+				SHADOW_MAP_HEIGHT = 512;
+				MARGIN = 0;
+				SCREEN_WIDTH = window.innerWidth;
+				SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
+				NEAR = 5;
+				FAR = 2000;
+			
+				world = new CANNON.World();
+				camera = new THREE.PerspectiveCamera(100000, SCREEN_WIDTH/SCREEN_HEIGHT,
+					NEAR, FAR);
+				camera.position.set(0,30,20);
+				bodies = [];
+				visuals = [];
+				lastCallTime = 0;
+				scene = new THREE.Scene();
+				controls = new THREE.OrbitControls(camera);
+				renderer = new THREE.WebGLRenderer();
+				mouseX = 0;
+				mouseY = 0;
+				windowHalfX = window.innerWidth/2;
+				windowHalfY = window.innerHeight/2;
+			
+				settings = {
+					stepFrequency: 60,
+					gx: 0,
+					gy: 0,
+					gz: 0,
+					iterations: 10,
+					tolerance: 0.0001,
+					spawnBolides: false,
+					spawnFrequency: 30,
+					bolideSpeed: 10,
+					bolideSize: 0.5,
+					redEarth: false,
+					a: 5,
+					e: 0.002,
+					i: 90,
+					O: 1,
+					o: 1,
+					vx: 1,
+					vy: 1,
+					vz: 1,
+					k: 1e6,
+					d: 3,
+					paused: false,
+				}
+				
+				container = document.createElement('div');
+				document.body.appendChild(container);
+				//document.addEventListener('mousemove',onDocumentMouseMove);
+				//window.addEventListener('resize',onWindowResize);
+			}
+			
+			function initGUI() {
+				gui = new dat.GUI();
+				
+				if (window.dat!=undefined) {
+					gui.domElement.parentNode.style.zIndex = 120;
+					
+					//World folder
+					var worldFolder = gui.addFolder('World');
+					worldFolder.add(settings, 'paused').onChange(function(p) {});
+					worldFolder.add(settings, 'stepFrequency', 60, 60*10).step(60);
+					
+					//Solver folder
+					var solverFolder = gui.addFolder('Solver');
+					solverFolder.add(settings, 'iterations', 1, 50).step(1).onChange(function(it) {
+						world.solver.iterations = it;
+					});
+					solverFolder.add(settings, 'k',10,10000000).onChange(function(k){
+						that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
+					});
+					solverFolder.add(settings, 'd',0,20).step(0.1).onChange(function(d){
+						that.setGlobalSpookParams(settings.k,settings.d,1/settings.stepFrequency);
+					});
+					solverFolder.add(settings, 'tolerance',0.0,10.0).step(0.01).onChange(function(t){
+						world.solver.tolerance = t;
+					});
+					
+					//Bolides
+					var bolideFolder = gui.addFolder('Bolides');
+					bolideFolder.add(settings, 'spawnBolides').onChange(function(spawnBolides){});
+					bolideFolder.add(settings, 'redEarth').onChange(function(redEarth){});
+					bolideFolder.add(settings, 'spawnFrequency').onChange(function(spawnFrequency){});
+					bolideFolder.add(settings, 'bolideSpeed').onChange(function(bolideSpeed){});
+					bolideFolder.add(settings, 'bolideSize').onChange(function(bolideSize){});
+					bolideFolder.add(settings, 'vx').onChange(function(vx){});
+					bolideFolder.add(settings, 'vy').onChange(function(vy){});
+					bolideFolder.add(settings, 'vz').onChange(function(vz){});
+					bolideFolder.add(settings, 'a').onChange(function(a){});
+					bolideFolder.add(settings, 'e').onChange(function(e){});
+					bolideFolder.add(settings, 'i').onChange(function(i){});
+					bolideFolder.add(settings, 'O').onChange(function(O){});
+					bolideFolder.add(settings, 'o').onChange(function(o){});
+				}
+			}
+			
+			function initPhysics() {
+				world.broadphase = new CANNON.NaiveBroadphase();
+				world.solver.iterations = settings.iterations;
+				
+				earthShape = new CANNON.Sphere(3);
+				earthBody = new CANNON.Body( {mass: 0 } );
+				earthBody.addShape(earthShape);
+				earthBody.position.set(0,0,0)
+				bodies.push(earthBody);
+				
+				world.addBody(earthBody);
+			}
+			
+			function initVisuals() {
+				obj = new THREE.Object3D();
+				group = new THREE.Group();
+				scene.add(group);
+				
+				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+				container.appendChild(renderer.domElement);
+				
+				var texture = 'from-braindump/Explosion-Source/textures/earth_big.jpg';
+				earthGeo = new THREE.SphereGeometry(3,28,28);
+				earthMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
+				earthMesh = new THREE.Mesh(earthGeo, earthMaterial);
+				scene.add(earthMesh);
+				obj.add(earthMesh);
+				visuals.push(obj);
+								
+				/*var earthLoader = new THREE.TextureLoader();
+				earthLoader.load(
+					'from-braindump/Explosion-Source/textures/earth_big.jpg',
+					function( texture ) {
+						earthGeo = new THREE.SphereGeometry(3,28,28);
+						earthMaterial = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
+						earthMesh = new THREE.Mesh(earthGeo, earthMaterial);
+						group.add(earthMesh);
+						//earthMesh.position.set(0,0,0);
+						//earthMesh.quaternion.set(0,0,0);
+						obj.add(earthMesh);
+						visuals.push(obj);
+				});*/
+			
+			}
+			
+			function createBolide() {}
+			
+			function updategui() {
+				if(gui){
+					// First level
+					for (var i in gui.__controllers){
+						gui.__controllers[i].updateDisplay();
+					}
+
+					// Second level
+					for (var f in gui.__folders){
+						for (var i in gui.__folders[f].__controllers){
+							gui.__folders[f].__controllers[i].updateDisplay();
+						}
+					}
+				}
+			}
+			
+			function updatePhysics() {
+				world.step(settings.stepFrequency);
+        // Copy coordinates from Cannon.js to Three.js
+        earthMesh.position.copy(earthBody.position);
+        earthMesh.quaternion.copy(earthBody.quaternion);
+			}
+			
+			function render() {
+				controls.update();
+				renderer.render(scene, camera);
+			}
+			
+			function animate() {
+				updatePhysics();
+				render();
+				requestAnimationFrame(animate);
+			}
+			
+			function generateBolide(mass) {
+				console.log('entered generateBolide()');
+				var redEarth, size, speed, shape, a, e, i, O, o, cartesian, x, y, z,
+					vx, vy, vz, bolide;
+
+				redEarth = settings.redEarth;
+				size = settings.size;
+				speed = settings.speed;
+				shape = new CANNON.Sphere(size);
+				debugger;
+
+				a = settings.a;
+				e = settings.e;
+				i = settings.i;
+				O = settings.O;
+				o = settings.o;
+				cartesian = orb.position.keplerian(a,e,i,O,o,0,0);
+
+				x = cartesian[0][0];
+				y = cartesian[0][1];
+				z = cartesian[0][2];
+
+				vx = cartesian[1][0]/10000000;
+				vy = cartesian[1][1]/10000000;
+				vz = cartesian[1][2]/10000000;
+
+				bolide = new CANNON.Body( {
+					mass: mass,
+					posiion: new CANNON(Vec3(x,y,z))
+				} );
+
+				bolide.addShape(shape);
+				bolide.velocity.set(-vx*speed,-vy*speed,-vz*speed);
+				bolide.linearDamping = 0.0;
+
+				bolide.preStep = function(){
+					// Get the vector pointing from the moon to the planet center
+					var bolide_to_planet = new CANNON.Vec3();
+					this.position.negate(bolide_to_planet);
+					// Get distance from planet to moon
+					var distance = bolide_to_planet.norm();
+					// Now apply force on moon
+					// Fore is pointing in the moon-planet direction
+					bolide_to_planet.normalize();
+					bolide_to_planet.mult((300*mass)/Math.pow(distance,2),this.force);
+				}
+
+				return bolide;
+			}
+		</script>
+	</body>
+</html>
