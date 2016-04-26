@@ -17,28 +17,113 @@
     <script src="js/smoothie.js"></script>
     <script src="dist/orb.min.js"></script>
     <script>
-      /**
+       /**
        * A demo showing how to use the preStep callback to add a force to a body.
        * This will act like a force field.
        */
+      
+        const ZEROVEC = new CANNON.Vec3(0,0,0);
+        const XUNITVEC = new CANNON.Vec3(1,0,0);
+        const YUNITVEC = new CANNON.Vec3(0,1,0);
+        const ZUNITVEC = new CANNON.Vec3(0,0,1);
+        const GM = 300;
+        const M1 = GM/orb.constants.common.G;
+        console.log(GM);
+        console.log(M1);
+
+        var demo = new CANNON.Demo();
+
+        CANNON.Trimesh.createEllipse = function (semimajor, eccentricity, tube, radialSegments, tubularSegments, arc) {
+            semimajor = semimajor || 1;
+            eccentricity = eccentricity || 0;
+            tube = tube || 0.5;
+            radialSegments = radialSegments || 8;
+            tubularSegments = tubularSegments || 6;
+            arc = arc || Math.PI * 2;
+                    
+            var vertices = [];
+            var indices = [];
+        
+            for ( var j = 0; j <= radialSegments; j ++ ) {
+                for ( var i = 0; i <= tubularSegments; i ++ ) {
+                    var u = i / tubularSegments * arc;
+                    var v = j / radialSegments * Math.PI * 2;
+        
+                    let radius = (semimajor * (1 - Math.pow(eccentricity,2)))/(1 + eccentricity * Math.cos(u));
+        
+                    var x = ( radius + tube * Math.cos( v ) ) * Math.cos( u );
+                    var y = ( radius + tube * Math.cos( v ) ) * Math.sin( u );
+                    var z = tube * Math.sin( v );
+        
+                    vertices.push( x, y, z );
+                }
+            }
+        
+            for ( var j = 1; j <= radialSegments; j ++ ) {
+                for ( var i = 1; i <= tubularSegments; i ++ ) {
+                    var a = ( tubularSegments + 1 ) * j + i - 1;
+                    var b = ( tubularSegments + 1 ) * ( j - 1 ) + i - 1;
+                    var c = ( tubularSegments + 1 ) * ( j - 1 ) + i;
+                    var d = ( tubularSegments + 1 ) * j + i;
+        
+                    indices.push(a, b, d);
+                    indices.push(b, c, d);
+                }
+            }
+        
+            return new CANNON.Trimesh(vertices, indices);
+        };
+        
+        function addEllipticalProjection(body, world){
+            let cylLength = 10;
+            let x = [body.position.x, body.position.y, body.position.z];
+            let xDot = [body.velocity.x, body.velocity.y, body.velocity.z];
+            let orbitElems = orb.position.stateToKepler(x, xDot, 0, M1);
+            let projectionShape = CANNON.Trimesh.createEllipse(orbitElems[0], orbitElems[1], body.shapes[0].radius, 8, 32);
+            projectionShape.collisionResponse = false;
+            let projection = new CANNON.Body({
+                mass: 1,
+                collisionFilterGroup: 2,
+                collisionFilterMask: 2
+            });
+            let quat = new CANNON.Quaternion();
+            quat.setFromEuler(orbitElems[2], -orbitElems[4], orbitElems[3], 'ZYX'); // TODO: Fix this
+            projection.addShape(projectionShape, ZEROVEC, quat);
+/*          projection.addEventListener("collide", function (e) {
+            });*/
+            world.addEventListener("postStep", function () {
+                if (world.bodies.indexOf(body) != -1) {
+                }
+                else {
+                    // If the body no longer exists, delete the projection
+                    demo.removeVisual(projection);
+                    world.removeBody(projection);
+                    // TODO This causes a minor error in javascript. Figure out how to fix it
+                }
+            });
+            world.addBody(projection);
+            demo.addVisual(projection);
+        }
+
+        function addCollisionBehavior(body, world) {
+            body.addEventListener("collide", function (e) { demo.removeVisual(this); world.remove(this); });
+        }
 
       var spawnBolides = true; 
 
       function generateBolide(mass){
               var redEarth = demo.getRedEarth(); 
               var size = demo.getSize(); 
-              var speed = demo.getSpeed(); 
-              var shape = new CANNON.Sphere(size); 
-              debugger;
-            
+              var shape = new CANNON.Sphere(size);            
 
-              var a = demo.getA(); 
-              var e = demo.getE(); 
-              var i = demo.getI(); 
-              var O = demo.getO(); 
-              var o = demo.geto(); 
-              var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0); 
+              let randomMult = 1;
 
+              var a = demo.getA() + Math.random()*randomMult; 
+              var e = demo.getE() + Math.random() * randomMult/5.0;
+              var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+              var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+              var o = orb.common.deg2rad(demo.geto());
+              var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0, 0, M1); 
 
               // var x = Math.floor((Math.random() * 10) + -5)*10;
               // var y = Math.floor((Math.random() * 10) + -5)*10;
@@ -50,9 +135,9 @@
               // var vy = demo.getVY(); 
               // var vz = demo.getVZ(); 
 
-              var vx = (cartesian[1][0]/10000000);
-              var vy = (cartesian[1][1]/10000000);
-              var vz = (cartesian[1][2]/10000000);
+              var vx = (cartesian[1][0]);
+              var vy = (cartesian[1][1]);
+              var vz = (cartesian[1][2]);
               // if(redEarth == true){
               //   if(x <0){
               //     vx =vx *(-1); 
@@ -70,19 +155,19 @@
               });
 
               bolide.addShape(shape); 
-              bolide.velocity.set(-vx*speed,-vy*speed,-vz*speed);
-              bolide.linearDamping =0.0; 
+              bolide.velocity.set(vx,vy,vz);
+              bolide.linearDamping = 0.0; 
 
               bolide.preStep = function(){
                 // Get the vector pointing from the moon to the planet center
                 var bolide_to_planet = new CANNON.Vec3();
                 this.position.negate(bolide_to_planet);
                 // Get distance from planet to moon
-                var distance = bolide_to_planet.norm();
+                var distance = bolide_to_planet.length();
                 // Now apply force on moon
                 // Fore is pointing in the moon-planet direction
                 bolide_to_planet.normalize();
-                bolide_to_planet.mult((300*mass)/Math.pow(distance,2),this.force);
+                bolide_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
               }
 
 
@@ -126,70 +211,45 @@
       }
 
       var i = 0; 
-      var demo = new CANNON.Demo();
-      demo.addScene("Moon",function(){
+      demo.addScene("Bolides", function(){
           var world = demo.getWorld();
-          var mass = 5;
           var moonShape = new CANNON.Sphere(0.5);
-          var planetShape = new CANNON.Sphere(3.5);
-          var moon = new CANNON.Body({
-            mass: mass,
-            position: new CANNON.Vec3(5,0,0)
-          });
-          
-          moon.addShape(moonShape);
 
+          var planetShape = new CANNON.Sphere(8);   
           var planet = new CANNON.Body({ mass: 0 });
           planet.addShape(planetShape);
-          moon.velocity.set(0,0,8);
-          moon.linearDamping = 0.0;
-          
 
-          // Use the preStep callback to apply the gravity force on the moon.
-          // This callback is evoked each timestep.
-	  world.addEventListener("preStep", function() {
-      spawnBolides = demo.getSpawnBolides(); 
-      debugger;
-      var bolide = generateBolide(5, moonShape);
-      addLinearPathProjection(bolide, world); // Add the path projections!
-      var frequency = demo.getFrequency(); 
-         debugger;
-      if(spawnBolides){
-        if((i % frequency) ==0){
-          world.addBody(bolide); 
-          demo.addVisual(bolide); 
-        }
-      }
-
-    
+                // Use the preStep callback to apply the gravity force on the moon.
+                // This callback is evoked each timestep.
+            world.addEventListener("preStep", function() {
+            spawnBolides = demo.getSpawnBolides(); 
+            var frequency = demo.getFrequency(); 
+            if(spawnBolides){
+                if((i % frequency) == 0){
+                var bolide = generateBolide(5, moonShape);
+                addEllipticalProjection(bolide, world); // Add the path projections!
+                addCollisionBehavior(bolide, world)
+                
+                world.addBody(bolide); 
+                demo.addVisual(bolide); 
+                }
+            }
 
           i++; 
 
-	  });
+          });
 
-          moon.preStep = function(){
-            // Get the vector pointing from the moon to the planet center
-            var moon_to_planet = new CANNON.Vec3();
-            this.position.negate(moon_to_planet);
-            // Get distance from planet to moon
-            var distance = moon_to_planet.norm();
-            // Now apply force on moon
-            // Fore is pointing in the moon-planet direction
-            moon_to_planet.normalize();
-            moon_to_planet.mult(1500/Math.pow(distance,2),this.force);
-          }
           // We add the objects to the world to simulate them
           //demo.spawnBolide(bolide);
-          world.addBody(moon); 
           world.addBody(planet);
           //world.addBody(bolide); 
           // And we add them to the demo to make them visible
           demo.addVisual(planet);
-          demo.addVisual(moon); 
           //demo.addVisual(bolide); 
          // spawnBolide(bolide); 
         });
-      demo.start();
-    </script>
+        
+        demo.start();
+     </script>
   </body>
 </html>
