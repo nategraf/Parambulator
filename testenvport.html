@@ -249,15 +249,53 @@
 
 
 
+			/***********************/
+			/* addVisual() - BEGIN */
+			/***********************/
+
+			/*
+			* NOTE addVisual() is a wrapper function for
+		 	* CANNON.Demo.prototype.addVisual()
+			*/
+			function addVisual(body, texture) {
+				if (!texture) {
+					demo.addVisual(body);
+				} else {
+					var settings = demo.settings;
+			    // What geometry should be used?
+			    var mesh;
+			    if(body instanceof CANNON.Body){
+			        //TODO add shape2mesh equivalent here
+							//XXX 11:30pm 4/26 here is where I left off
+			    }
+			    if(mesh) {
+			        // Add body
+			        this.bodies.push(body);
+			        this.visuals.push(mesh);
+			        body.visualref = mesh;
+			        body.visualref.visualId = this.bodies.length - 1;
+			        //mesh.useQuaternion = true;
+			        this.scene.add(mesh);
+			    }
+				}
+			}
+			/*********************/
+			/* addVisual() - END */
+			/*********************/
+
+
+
+
       var i = 0;
       demo.addScene("Bolides", function(){
         var world = demo.getWorld();
         var moonShape = new CANNON.Sphere(0.5);
 
 				/*
-				* TODO here is where the earth is generated, so here is where the 
+				* TODO here is where the earth is generated, so here is where the
 				* textures will go
 				*/
+
         var planetShape = new CANNON.Sphere(8);
         var planet = new CANNON.Body({ mass: 0 });
         planet.addShape(planetShape);
