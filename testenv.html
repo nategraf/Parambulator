@@ -28,6 +28,12 @@
         const ZUNITVEC = new CANNON.Vec3(0,0,1);
         const GM = 300;
         const M1 = GM/orb.constants.common.G;
+        var space = false; 
+        var b = false; 
+        var up = false; 
+        var down = false; 
+        var left = false; 
+        var right = false; 
         console.log(GM);
         console.log(M1);
 
@@ -73,6 +79,8 @@
         
             return new CANNON.Trimesh(vertices, indices);
         };
+
+
         
         function addEllipticalProjection(body, world){
             let cylLength = 10;
@@ -130,19 +138,22 @@
               var o = orb.common.deg2rad(demo.geto());
               var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0, 0, M1); 
 
-              // var x = Math.floor((Math.random() * 10) + -5)*10;
-              // var y = Math.floor((Math.random() * 10) + -5)*10;
-              // var z = Math.floor((Math.random() * 10) + -5)*10;
               var x = cartesian[0][0]; 
               var y = cartesian[0][1]; 
               var z = cartesian[0][2]; 
+              var vx = (cartesian[1][0]);
+              var vy = (cartesian[1][1]);
+              var vz = (cartesian[1][2]);
+
+              // var x = Math.floor((Math.random() * 10) + -5)*10;
+              // var y = Math.floor((Math.random() * 10) + -5)*10;
+              // var z = Math.floor((Math.random() * 10) + -5)*10;
+
               // var vx = demo.getVX(); 
               // var vy = demo.getVY(); 
               // var vz = demo.getVZ(); 
 
-              var vx = (cartesian[1][0]);
-              var vy = (cartesian[1][1]);
-              var vz = (cartesian[1][2]);
+             
               // if(redEarth == true){
               //   if(x <0){
               //     vx =vx *(-1); 
@@ -161,6 +172,7 @@
 
               bolide.addShape(shape); 
               bolide.velocity.set(vx,vy,vz);
+              debugger;
               bolide.linearDamping = 0.0; 
 
               bolide.preStep = function(){
@@ -180,14 +192,124 @@
       }
 
       function generateIzzy(){
-          var shape = new CANNON.Cylinder(1,1, 5, 10);            
+          var mass = 1; 
+          var shape = new CANNON.Cylinder(1,1, 5, 10);  
+          var randomMult  = 1; 
+          var a = demo.getA() + Math.random()*randomMult; 
+          var e = demo.getE() + Math.random() * randomMult/5.0;
+          var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+          var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+          var o = orb.common.deg2rad(demo.geto());
+          var cartesian = orb.position.keplerian(a+40, e, i, O, o, 0, 0, 0, M1); 
+
+          var x = cartesian[0][0]; 
+          var y = cartesian[0][1]; 
+          var z = cartesian[0][2]; 
+          var vx = (cartesian[1][0]);
+          var vy = (cartesian[1][1]);
+          var vz = (cartesian[1][2]);          
 
           var izzy = new CANNON.Body({
-              mass: 1, 
-              position: new CANNON.Vec3(10,10,10)
+              mass: mass, 
+              position: new CANNON.Vec3(x,y,z)
               });
 
+          izzy.velocity.set(vx,vy,vz);
+          izzy.linearDamping = 0.0; 
+
           izzy.addShape(shape); 
+
+      izzy.preStep = function(){
+                forward = demo.getSpace(); 
+                // Get the vector pointing from the moon to the planet center
+                var izzy_to_planet = new CANNON.Vec3();
+                var temp = new CANNON.Vec3(); 
+                this.position.negate(temp); 
+                temp.normalize(); 
+                this.position.negate(izzy_to_planet);
+              //   // Get distance from planet to moon
+                var distance = izzy_to_planet.length();
+              //   // Now apply force on moon
+              //   // Fore is pointing in the moon-planet direction
+                izzy_to_planet.normalize();
+                izzy_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+                debugger;
+
+                if(space == true){
+
+                  this.velocity.x = this.velocity.x * 1.10; 
+                  this.velocity.y = this.velocity.y * 1.10; 
+                  this.velocity.z = this.velocity.z * 1.10;
+                  space = false; 
+                }
+
+                if(b == true){
+                this.velocity.x = this.velocity.x *.75; 
+                this.velocity.y = this.velocity.y *.75; 
+                this.velocity.z = this.velocity.z *.75; 
+
+                b = false; 
+                }
+
+                if(left == true){
+                  if(temp.x > 0)
+                    temp.x = 1 - temp.x; 
+                  else
+                    temp.x = 1 + temp.x; 
+
+                  if(temp.y > 0)
+                    temp.y = 1 - temp.y;
+                  else 
+                    temp.y = 1 + temp.y; 
+                  if(temp.z > 0)
+                    temp.z = 1 - temp.z; 
+                  else
+                    temp.z = 1 + temp.z; 
+
+                  this.velocity.x -= (temp.x*1);
+                  this.velocity.y -= (temp.y*1); 
+                  this.velocity.z -= (temp.z*1); 
+   
+                  left = false; 
+                }
+
+                if(right == true){
+                  if(temp.x >0)
+                    temp.x = 1 - temp.x; 
+                  else
+                    temp.x = 1 + temp.x; 
+
+                  if(temp.y > 0)
+                    temp.y = 1 - temp.y;
+                  else 
+                    temp.y = 1 + temp.y; 
+                  if(temp.z > 0)
+                    temp.z = 1 - temp.z; 
+                  else
+                    temp.z = 1 + temp.z; 
+
+                  this.velocity.x += (temp.x*1);
+                  this.velocity.y += (temp.y*1); 
+                  this.velocity.z += (temp.z*1); 
+   
+                  right = false; 
+                }
+
+                if(up == true){
+                this.velocity.x -= (temp.x *1);  
+                this.velocity.y -= (temp.y *1);  
+                this.velocity.z -= (temp.z *1);  
+                up = false; 
+                } 
+
+                if(down == true){
+                this.velocity.x += (temp.x *1);  
+                this.velocity.y += (temp.y *1);  
+                this.velocity.z += (temp.z *1); 
+                down = false; 
+                }
+            
+              }
           return izzy; 
 
 
@@ -255,20 +377,48 @@ demo.addScene("Bolides", function(){
           var frequency = demo.getFrequency();
           var forward = demo.getSpace();  
           var backward = demo.getB(); 
+          var testAngular = demo.getLeft();
+          var testAngularOpposite = demo.getRight();  
+          var getUp = demo.getUp(); 
+          var getDown = demo.getDown(); 
 
           //Izzy Controls - will encapsulate this if I have extra time. 
           if(forward == true){
-            izzy.force.x += izzy.shapes[0].faceNormals[10].x*100; 
-            izzy.force.y += izzy.shapes[0].faceNormals[10].y*100;
-            izzy.force.z += izzy.shapes[0].faceNormals[10].z*100;
+            space = true; 
+            // izzy.force.x += izzy.shapes[0].faceNormals[10].x*100; 
+            // izzy.force.y += izzy.shapes[0].faceNormals[10].y*100;
+            // izzy.force.z += izzy.shapes[0].faceNormals[10].z*100;
             demo.setSpace();                             
           }
 
           if(backward == true){
-            izzy.force.x -= izzy.shapes[0].faceNormals[10].x*100; 
-            izzy.force.y -= izzy.shapes[0].faceNormals[10].y*100;
-            izzy.force.z -= izzy.shapes[0].faceNormals[10].z*100;
-            demo.setB(); 
+            b = true; 
+            // izzy.force.x -= izzy.shapes[0].faceNormals[10].x*100; 
+            // izzy.force.y -= izzy.shapes[0].faceNormals[10].y*100;
+            // izzy.force.z -= izzy.shapes[0].faceNormals[10].z*100;
+            demo.setB();  
+          }
+
+          if(testAngular == true){
+            left = true; 
+            //izzy.angularVelocity.x += 1; 
+            demo.setLeft(); 
+          }
+
+          if(testAngularOpposite == true){
+            right = true; 
+          //izzy.angularVelocity.x -= 1; 
+          demo.setRight(); 
+          }
+
+          if(getUp == true){
+            up = true; 
+            demo.setUp(); 
+          }
+
+          if(getDown == true){
+            down = true; 
+            demo.setDown(); 
           }
 
           if(spawnBolides){
@@ -283,12 +433,11 @@ demo.addScene("Bolides", function(){
               }
           }
           i++;
-          console.log(izzy.shapes[0].faceNormals[10])
-          debugger;
           });
 
           world.addBody(izzy); 
           demo.addVisual(izzy); 
+          debugger;
           // We add the objects to the world to simulate them
           //demo.spawnBolide(bolide);
           world.addBody(planet);

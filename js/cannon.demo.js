@@ -40,6 +40,10 @@ CANNON.Demo = function(options){
         //vz: 1,
         space: false,
         b: false, 
+        left: false,
+        up: false, 
+        right: false, 
+        down: false, 
         a: 10, 
         e: .002, 
         i: 90, 
@@ -807,6 +811,27 @@ CANNON.Demo = function(options){
     }
 
 
+    //IMPORTANT NOTE TO SELF ADD A LISTENER FOR 'KEYDOWN' FOR ARROW KEYS
+
+    document.addEventListener('keydown', function(e){
+        if(e.keyCode){
+            switch(e.keyCode){
+                case 37://left
+                settings.left = true; 
+                break; 
+                case 38://up
+                settings.up = true; 
+                break; 
+                case 39://right
+                settings.right = true; 
+                break; 
+                case 40://down
+                settings.down = true;
+                break; 
+            }
+           
+        }
+    });
 
     document.addEventListener('keypress',function(e){
 
@@ -816,6 +841,7 @@ CANNON.Demo = function(options){
             case 32: // Space - forward
                 settings.space = true; 
                 break;
+      
 
             case 98: //b backward
                 settings.b = true
@@ -1040,6 +1066,25 @@ CANNON.Demo.prototype.getB = function(){
     debugger; 
 }
 
+CANNON.Demo.prototype.getLeft = function(){
+    return this.settings.left; 
+    debugger; 
+}
+
+CANNON.Demo.prototype.getUp = function(){
+    return this.settings.up; 
+    debugger; 
+}
+
+CANNON.Demo.prototype.getRight = function(){
+    return this.settings.right; 
+    debugger; 
+}
+
+CANNON.Demo.prototype.getDown = function(){
+    return this.settings.down; 
+    debugger; 
+}
 
 
 CANNON.Demo.prototype.setSpace = function(){
@@ -1048,6 +1093,22 @@ CANNON.Demo.prototype.setSpace = function(){
 
 CANNON.Demo.prototype.setB = function(){
     this.settings.b = false; 
+}
+
+CANNON.Demo.prototype.setLeft = function(){
+    this.settings.left = false; 
+}
+
+CANNON.Demo.prototype.setUp = function(){
+    this.settings.up = false; 
+}
+
+CANNON.Demo.prototype.setRight= function(){
+    this.settings.right = false; 
+}
+
+CANNON.Demo.prototype.setDown = function(){
+    this.settings.down = false; 
 }
 
 CANNON.Demo.prototype.getRedEarth = function(){
