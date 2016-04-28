@@ -97,15 +97,42 @@
 					sSphereMesh = new THREE.Mesh( sSphereGeo, sSphereMat );
 					//sSphereMesh.position.setX(5);
 
-					mSphereGeo = new THREE.SphereGeometry(3, 28, 28);
-					mSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
-						wireframe: true });
-					mSphereMesh = new THREE.Mesh( mSphereGeo, mSphereMat );
+					//mSphereGeo = new THREE.SphereGeometry(3, 28, 28);
+					//mSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
+						//wireframe: true });
+					//var loader = new THREE.TextureLoader();
+					//var material;
+					//loader.load(
+						//'https://s3.amazonaws.com/blenderguru.com/uploads/2011/06/Color%20Map.jpg',
+						//function(texture) {
+							//material = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
+						//}
+
+					//);
+
+
+
+					var earthLoader = new THREE.TextureLoader();
+					earthLoader.load(
+						'from-braindump/Explosion-Source/textures/earth_big.jpg',
+						function( texture ) {
+							mSphereGeo = new THREE.SphereGeometry(3,28,28);
+						 	mSphereMat = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
+							mSphereMesh = new THREE.Mesh(earthGeo, material);
+							group.add(mSphereMesh);
+						});
+
+
+
+
+
+					//var mbm = new THREE.MeshBasicMaterial({map: texture, overdraw: 0.5});
+					//mSphereMesh = new THREE.Mesh( mSphereGeo, material );
 
 					lSphereGeo = new THREE.SphereGeometry(7, 32, 32);
 					lSphereMat = new THREE.MeshBasicMaterial( { color: 0xff000,
 						wireframe: true });
-					lSphereMesh = new THREE.Mesh( lSphereGeo, lSphereMat );
+					lSphereMesh = new THREE.Mesh( lSphereGeo, material );
 
 					scene.add(boxMesh);
 					scene.add(sSphereMesh);
