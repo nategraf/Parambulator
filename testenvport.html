@@ -281,7 +281,7 @@
 										* arguments varies based on what kind of object is being
 										* created.
 										*/
-										new THREE.SphereGeometry(shape.radius,8,8);
+										new THREE.SphereGeometry(shape.radius,25, 25);
 									mesh = new THREE.Mesh(sphere_geometry, texture);
 									break;
 
@@ -421,8 +421,8 @@
 			    // Add body
 			    demo.bodies.push(body);
 			    demo.visuals.push(obj);
-			    demo.visualref = obj;
-			    demo.visualref.visualId = demo.bodies.length - 1;
+			    body.visualref = obj;
+			    body.visualref.visualId = demo.bodies.length - 1;
 			    //mesh.useQuaternion = true;
 			    demo.scene.add(obj);
 			  }
@@ -471,13 +471,16 @@
         //demo.spawnBolide(bolide);
         world.addBody(planet);
         //world.addBody(bolide);
-        // And we add them to the demo to make them visible
-				var planetTexture = new THREE.TextureLoader().load(
-					"from-braindump/Explosion-Source/textures/earth_big.jpg");
-				//planetTexture.wrapS = THREE.RepeatWrapping;
-				//planetTexture.wrapT = THREE.RepeatWrapping;
-				//planetTexture.repeat.set( 4, 4 );
-        addVisual(planet,planetTexture);
+        var imgTexture = new THREE.TextureLoader().load("earth_big.jpg");
+				var imgTextureBump = new THREE.TextureLoader().load("earth_bump_big.jpg");
+
+				var material = new THREE.MeshPhongMaterial({
+					map : imgTexture,
+					bumpMap: imgTextureBump,
+				})
+
+
+        addVisual(planet, material);
         //demo.addVisual(bolide);
         // spawnBolide(bolide);
       });
