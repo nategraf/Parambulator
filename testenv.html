@@ -111,6 +111,11 @@
 
       var spawnBolides = true; 
 
+      function addForces(){
+        var onwards = demo.getSpace(); 
+        return onwards; 
+      }
+
       function generateBolide(mass){
               var redEarth = demo.getRedEarth(); 
               var size = demo.getSize(); 
@@ -174,6 +179,20 @@
               return bolide; 
       }
 
+      function generateIzzy(){
+          var shape = new CANNON.Cylinder(1,1, 5, 10);            
+
+          var izzy = new CANNON.Body({
+              mass: 1, 
+              position: new CANNON.Vec3(10,10,10)
+              });
+
+          izzy.addShape(shape); 
+          return izzy; 
+
+
+      }
+
       function addLinearPathProjection(body, world) {
           let cylLength = 10;
           let projectionShape = new CANNON.Cylinder(body.shapes[0].radius, body.shapes[0].radius, cylLength, 20);
@@ -211,34 +230,65 @@
       }
 
       var i = 0; 
-      demo.addScene("Bolides", function(){
+      var izzy;
+
+demo.addScene("Bolides", function(){
+          izzy = generateIzzy(); 
+
           var world = demo.getWorld();
           var moonShape = new CANNON.Sphere(0.5);
-
+          //var cylinder = new CANNON.Cylinder(1); 
           var planetShape = new CANNON.Sphere(8);   
           var planet = new CANNON.Body({ mass: 0 });
+         
+
+              //bolide.velocity.set(vx,vy,vz);
+              //bolide.linearDamping = 0.0;           
           planet.addShape(planetShape);
+          
 
                 // Use the preStep callback to apply the gravity force on the moon.
                 // This callback is evoked each timestep.
-            world.addEventListener("preStep", function() {
-            spawnBolides = demo.getSpawnBolides(); 
-            var frequency = demo.getFrequency(); 
-            if(spawnBolides){
-                if((i % frequency) == 0){
+
+          world.addEventListener("preStep", function() {
+          spawnBolides = demo.getSpawnBolides(); 
+          var frequency = demo.getFrequency();
+          var forward = demo.getSpace();  
+          var backward = demo.getB(); 
+
+          //Izzy Controls - will encapsulate this if I have extra time. 
+          if(forward == true){
+            izzy.force.x += izzy.shapes[0].faceNormals[10].x*100; 
+            izzy.force.y += izzy.shapes[0].faceNormals[10].y*100;
+            izzy.force.z += izzy.shapes[0].faceNormals[10].z*100;
+            demo.setSpace();                             
+          }
+
+          if(backward == true){
+            izzy.force.x -= izzy.shapes[0].faceNormals[10].x*100; 
+            izzy.force.y -= izzy.shapes[0].faceNormals[10].y*100;
+            izzy.force.z -= izzy.shapes[0].faceNormals[10].z*100;
+            demo.setB(); 
+          }
+
+          if(spawnBolides){
+              if((i % frequency) == 0){
                 var bolide = generateBolide(5, moonShape);
-                addEllipticalProjection(bolide, world); // Add the path projections!
-                addCollisionBehavior(bolide, world)
+
+                //addEllipticalProjection(bolide, world); // Add the path projections!
+                //addCollisionBehavior(bolide, world)
                 
                 world.addBody(bolide); 
                 demo.addVisual(bolide); 
-                }
-            }
-
-          i++; 
-
+              }
+          }
+          i++;
+          console.log(izzy.shapes[0].faceNormals[10])
+          debugger;
           });
 
+          world.addBody(izzy); 
+          demo.addVisual(izzy); 
           // We add the objects to the world to simulate them
           //demo.spawnBolide(bolide);
           world.addBody(planet);

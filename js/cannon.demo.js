@@ -38,6 +38,8 @@ CANNON.Demo = function(options){
         //vx: 1,
         //vy: 1,
         //vz: 1,
+        space: false,
+        b: false, 
         a: 10, 
         e: .002, 
         i: 90, 
@@ -218,16 +220,6 @@ CANNON.Demo = function(options){
         }
         settings.rendermode = mode;
     }
-
- 
-
-
-  //Bolide stuff
-
-  
-
-
-
 
 
     /**
@@ -814,13 +806,20 @@ CANNON.Demo = function(options){
         renderer.render( that.scene, camera );
     }
 
+
+
     document.addEventListener('keypress',function(e){
 
         if(e.keyCode){
             switch(e.keyCode){
-            case 32: // Space - restart
-                restartCurrentScene();
+            //TODO add cases for space, ctrl, and all arrows
+            case 32: // Space - forward
+                settings.space = true; 
                 break;
+
+            case 98: //b backward
+                settings.b = true
+                break; 
 
             case 104: // h - toggle widgets
                 if(stats.domElement.style.display=="none"){
@@ -1028,6 +1027,27 @@ CANNON.Demo.prototype.getSpawnBolides = function(){
 
 CANNON.Demo.prototype.getSize = function(){
     return this.settings.size; 
+}
+
+
+CANNON.Demo.prototype.getSpace = function(){
+    return this.settings.space; 
+    debugger; 
+}
+
+CANNON.Demo.prototype.getB = function(){
+    return this.settings.b; 
+    debugger; 
+}
+
+
+
+CANNON.Demo.prototype.setSpace = function(){
+    this.settings.space = false; 
+}
+
+CANNON.Demo.prototype.setB = function(){
+    this.settings.b = false; 
 }
 
 CANNON.Demo.prototype.getRedEarth = function(){
