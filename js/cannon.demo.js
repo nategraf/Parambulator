@@ -31,6 +31,8 @@ CANNON.Demo = function(options){
         iterations: 3,
         tolerance: 0.0001,
         spawnBolides: false, 
+        spawnArklets: false, 
+        numberOfArklets: 10, 
         size: .5,
         redEarth: true, 
         frequency: 30, 
@@ -693,6 +695,14 @@ CANNON.Demo = function(options){
             //Spawn Bolides
             var bf = gui.addFolder('Spawn Bolides');
 
+            bf.add(settings, 'spawnArklets').onChange(function(spawnArklets){
+
+            });
+
+            bf.add(settings, 'numberOfArklets').onChange(function(numberOfArklets){
+
+            });
+
             bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){
 
             }); 
@@ -1049,6 +1059,14 @@ CANNON.Demo.prototype.geto = function(){
 
 CANNON.Demo.prototype.getSpawnBolides = function(){
     return this.settings.spawnBolides; 
+}
+
+CANNON.Demo.prototype.getSpawnArklets = function(){
+    return this.settings.spawnArklets;
+}
+
+CANNON.Demo.prototype.getNumberOfArklets = function(){
+    return this.settings.numberOfArklets; 
 }
 
 CANNON.Demo.prototype.getSize = function(){

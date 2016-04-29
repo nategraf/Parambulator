@@ -28,6 +28,8 @@
         const ZUNITVEC = new CANNON.Vec3(0,0,1);
         const GM = 300;
         const M1 = GM/orb.constants.common.G;
+        var spawnArkletsOnce = true; 
+
         var space = false; 
         var b = false; 
         var up = false; 
@@ -122,6 +124,72 @@
       function addForces(){
         var onwards = demo.getSpace(); 
         return onwards; 
+      }
+
+      function generateArkletCloud(n){
+          var izzyPosition = izzy.position; 
+          
+          var mass = 1; 
+          var randomMult = 1; 
+          var shape = new CANNON.Cylinder(.2, .2, 1, 10); 
+          var a = demo.getA() + Math.random()*randomMult; 
+          var e = demo.getE() + Math.random() * randomMult/5.0;
+          var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+          var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+          var o = orb.common.deg2rad(demo.geto());
+          var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0, 0, M1); 
+
+          var x = cartesian[0][0]; 
+          var y = cartesian[0][1]; 
+          var z = cartesian[0][2]; 
+          var vx = (cartesian[1][0]);
+          var vy = (cartesian[1][1]);
+          var vz = (cartesian[1][2]);
+
+          var arklets = new Array(); 
+
+          for(var i = 0; i < n; i++){
+              var x = izzy.position.x; 
+              var y = izzy.position.y; 
+              var z = izzy.position.z;
+              var even = 1; 
+
+              if(i%2 == 0) 
+                even = -1; 
+
+              if(i< 11){
+                var arklet = new CANNON.Body({
+                mass: 1,
+                position: new CANNON.Vec3(x+(.5*i*even)+(3*even),y+(.5*i*even)+(3*even),z+(3*even))
+                });
+              } 
+              else {
+                var arklet = new CANNON.Body({
+                mass: 1,
+                position: new CANNON.Vec3(x+(.5*(i-10)*even)+(3*even),y+(.5*(i-10)*even)+(3*even),z+(-3*even))
+                });
+
+              }  
+
+              arklet.addShape(shape);
+              arklet.velocity.set(izzy.velocity.x,izzy.velocity.y,izzy.velocity.z); 
+              arklet.linearDamping = 0.0; 
+
+              arklet.preStep = function(){
+              // Get the vector pointing from the moon to the planet center
+              var arklet_to_planet = new CANNON.Vec3();
+              this.position.negate(arklet_to_planet);
+              // Get distance from planet to moon
+              var distance = arklet_to_planet.length();
+              // Now apply force on moon
+              // Fore is pointing in the moon-planet direction
+              arklet_to_planet.normalize();
+              arklet_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+              }
+
+              arklets.push(arklet);   
+          }
+        return arklets; 
       }
 
       function generateBolide(mass){
@@ -373,7 +441,9 @@ demo.addScene("Bolides", function(){
                 // This callback is evoked each timestep.
 
           world.addEventListener("preStep", function() {
-          spawnBolides = demo.getSpawnBolides(); 
+          var numberOfArklets = demo.getNumberOfArklets(); 
+          var spawnArklets = demo.getSpawnArklets(); 
+          var spawnBolides = demo.getSpawnBolides(); 
           var frequency = demo.getFrequency();
           var forward = demo.getSpace();  
           var backward = demo.getB(); 
@@ -419,6 +489,17 @@ demo.addScene("Bolides", function(){
           if(getDown == true){
             down = true; 
             demo.setDown(); 
+          }
+
+
+          if(spawnArklets && spawnArkletsOnce){
+              var arklets = generateArkletCloud(numberOfArklets); 
+              for(var i = 0; i<arklets.length; i++){
+                  world.addBody(arklets[i]);
+                  demo.addVisual(arklets[i]); 
+              }
+              spawnArkletsOnce = false; 
+
           }
 
           if(spawnBolides){
