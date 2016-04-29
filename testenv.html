@@ -240,7 +240,6 @@
 
               bolide.addShape(shape); 
               bolide.velocity.set(vx,vy,vz);
-              debugger;
               bolide.linearDamping = 0.0; 
 
               bolide.preStep = function(){
@@ -419,10 +418,11 @@
           body.addEventListener("collide", function (e) { demo.removeVisual(this); world.remove(this); });
       }
 
-      var i = 0; 
+      var index; 
       var izzy;
 
 demo.addScene("Bolides", function(){
+          index = 0; 
           izzy = generateIzzy(); 
 
           var world = demo.getWorld();
@@ -503,17 +503,18 @@ demo.addScene("Bolides", function(){
           }
 
           if(spawnBolides){
-              if((i % frequency) == 0){
+              if((index % frequency) == 0){
                 var bolide = generateBolide(5, moonShape);
 
                 //addEllipticalProjection(bolide, world); // Add the path projections!
                 //addCollisionBehavior(bolide, world)
                 
                 world.addBody(bolide); 
-                demo.addVisual(bolide); 
+                demo.addVisual(bolide);
+                debugger;  
               }
           }
-          i++;
+          index++;
           });
 
           world.addBody(izzy); 
