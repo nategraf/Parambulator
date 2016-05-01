@@ -456,7 +456,7 @@ CANNON.Demo = function(options){
     var SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
     var camera, controls, renderer;
     var container;
-    var NEAR = 5, FAR = 1500;
+    var NEAR = 5, FAR = 5000;
     var sceneHUD, cameraOrtho, hudMaterial;
 
     var mouseX = 0, mouseY = 0;
@@ -473,7 +473,7 @@ CANNON.Demo = function(options){
         document.body.appendChild( container );
 
         // Camera
-        camera = new THREE.PerspectiveCamera( 20, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
+        camera = new THREE.PerspectiveCamera( 30, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
 
         //camera.up.set(0,0,1);
         camera.position.set(0,30,100);
@@ -514,13 +514,13 @@ CANNON.Demo = function(options){
         container.appendChild( renderer.domElement );
 
         // Add info
-        info = document.createElement( 'div' );
+        /*info = document.createElement( 'div' );
         info.style.position = 'absolute';
         info.style.top = '10px';
         info.style.width = '100%';
         info.style.textAlign = 'center';
         info.innerHTML = '<a href="http://github.com/schteppe/cannon.js">cannon.js</a> - javascript 3d physics';
-        container.appendChild( info );
+        container.appendChild( info );*/
 
         document.addEventListener('mousemove',onDocumentMouseMove);
         window.addEventListener('resize',onWindowResize);
@@ -742,7 +742,7 @@ CANNON.Demo = function(options){
         controls = new THREE.TrackballControls( camera, renderer.domElement );
         controls.rotateSpeed = 15.0;
         controls.zoomSpeed = 0.2;
-        controls.panSpeed = 0.2;
+        //controls.panSpeed = 0.2;
         controls.noZoom = false;
         controls.noPan = true;
         controls.staticMoving = false;

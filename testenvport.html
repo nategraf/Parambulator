@@ -16,12 +16,34 @@
     <script src="js/Stats.js"></script>
     <script src="js/smoothie.js"></script>
     <script src="dist/orb.min.js"></script>
+    <!--script id="vertexShader" type="x-shader/x-vertex">
+			uniform vec3 viewVector;
+			uniform float c;
+			uniform float p;
+			varying float intensity;
+			void main() {
+    		vec3 vNormal = normalize( normalMatrix * normal );
+				vec3 vNormel = normalize( normalMatrix * viewVector );
+				intensity = pow( c - dot(vNormal, vNormel), p );
+	
+    		gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		</script>
+		<script id="fragmentShader" type="x-shader/x-vertex"> 
+			uniform vec3 glowColor;
+			varying float intensity;
+			void main() {
+				vec3 glow = glowColor * intensity;
+    		gl_FragColor = vec4( glow, 1.0 );
+			}
+</script-->
     <script>
      	/**
      	* A demo showing how to use the preStep callback to add a force to a body.
      	* This will act like a force field.
      	*/
 
+			/*global CANNON*/ /*global orb*/ /*global THREE*/
       const ZEROVEC = new CANNON.Vec3(0,0,0);
       const XUNITVEC = new CANNON.Vec3(1,0,0);
       const YUNITVEC = new CANNON.Vec3(0,1,0);
@@ -447,24 +469,87 @@
 					demo.visuals.push(obj_extra);
 					demo.scene.add(obj_extra)
 				}
+				
+				return obj;
 			}
 			/*********************/
 			/* addVisual() - END */
 			/*********************/
+		
+			/*var customMaterial = new THREE.ShaderMaterial({
+	    		uniforms: 
+					{ 
+						"c":   { type: "f", value: 1.0 },
+						"p":   { type: "f", value: 1.4 },
+						glowColor: { type: "c", value: new THREE.Color(0xffff00) },
+						viewVector: { type: "v3", value: demo.camera.position }
+					},
+					vertexShader:   document.getElementById( 'vertexShader'   ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+					side: THREE.FrontSide,
+					blending: THREE.AdditiveBlending,
+					transparent: true
+				});*/
 
-			function createGlow(body, type) {
+			/*only to be used with spheres*/
+			function createGlow(object, type) {
+				if (object instanceof THREE.Object3D) {
+					var objMesh = object.children[0];
+					var glowGeometry = objMesh.geometry.clone(); 
+					glowGeometry.radius = objMesh.geometry.radius+(objMesh.geometry.radius*0.01);
+					var glowMaterial;
+					switch (type) {
+						case 'WARNING':
+							glowMaterial = new THREE.MeshBasicMaterial({
+								color: 0xffd000,
+								side: THREE.DoubleSide,
+								shading: THREE.SmoothShading,
+								blending: THREE.AdditiveBlending,
+								transparent: true,
+								opacity: 0.6
+							});
+							break;
 
-				switch (type) {
-					case WARNING:
+						case 'DANGER':
+							glowMaterial = new THREE.MeshBasicMaterial({
+								color: 0xff0000,
+								side: THREE.DoubleSide,
+								shading: THREE.SmoothShading,
+								blending: THREE.AdditiveBlending,
+								transparent: true,
+								opacity: 0.6
+							});
+							break;
 						
-						break;
-
-					case DANGER:
-
-						break;
+						case 'THRUST':
+							glowMaterial = new THREE.MeshBasicMaterial({
+								color: 0xa807ba,
+								side: THREE.DoubleSide,
+								shading: THREE.SmoothShading,
+								blending: THREE.AdditiveBlending,
+								transparent: true,
+								opacity: 0.6
+							});
+							break;
+					}
+					
+					var glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+					var glow3d = new THREE.Object3D();
+					glow3d.add(glowMesh);
+					if (glowMesh && glow3d) {
+						demo.visuals.push(glow3d);
+						demo.scene.add(glow3d);
+					} else {
+						console.log("Couldn't create star map");
+					}
+					glow3d.add(glowMesh);
+					} else {
+						console.log("ERROR: Arg[0] for createGlow() must be of" + 
+							" type THREE.Object3D.");
+					}
 				}
-			}
-
+			
+	
       var i = 0;
       demo.addScene("Bolides", function(){
         var world = demo.getWorld();
@@ -474,7 +559,7 @@
 				* TODO here is where the earth is generated, so here is where the
 				* textures will go
 				*/
-        var planetShape = new CANNON.Sphere(30);
+        var planetShape = new CANNON.Sphere(20);
         var planet = new CANNON.Body({ mass: 0 });
         planet.addShape(planetShape);
 
@@ -511,12 +596,18 @@
 				})
 
 
-        addVisual(planet, material);
+      	addVisual(planet, material);
 
-				var starmap = new THREE.SphereGeometry(550,32,32);
+				var starmap = new THREE.SphereGeometry(1024,32,32);
 				var starMaterial = new THREE.MeshBasicMaterial();
-				starMaterial.map = new THREE.TextureLoader().load("img/stellar_map.jpg");
-				starMaterial.side = THREE.BackSide;
+				starMaterial.map = new THREE.TextureLoader().load("img/milkywaypan_brunier_2048.jpeg");
+				//starMaterial.map.generateMipmaps = false;
+				//starMaterial.map.magFilter = THREE.LinearFilter;
+				//starMaterial.map.minFilter = THREE.LinearFilter;
+				//starMaterial.map.anisotropy = 4;
+				//starMaterial.map.needsUpdate = true;
+				starMaterial.side = THREE.DoubleSide;
+				starMaterial.transparent = true;
 				var starMesh = new THREE.Mesh(starmap, starMaterial);
 				var star3d = new THREE.Object3D();
 				star3d.add(starMesh);
@@ -526,7 +617,31 @@
 				} else {
 					console.log("Couldn't create star map");
 				}
-				star3d.add(starMesh);
+				//star3d.add(starMesh);
+				var sun = new THREE.SphereGeometry(200, 32, 32);
+				var sunMaterial = new THREE.MeshBasicMaterial();
+				sunMaterial.map = new THREE.TextureLoader().load("img/preview_sun.jpg");
+				var sunMesh = new THREE.Mesh(sun, sunMaterial);
+				var sun3d = new THREE.Object3D();
+				//sun3d.position.set(0,0,40);
+				sun3d.add(sunMesh);
+				if (sunMesh && sun3d) {
+					demo.visuals.push(sun3d);
+					demo.scene.add(sun3d);
+				} else {
+					console.log("ERROR: Couldn't generate sun.")
+				}
+				
+				
+				/*var Izzy = new THREE.JSONLoader().load("Seveneves_Izzy_THREE.json", function(geometry, materials) {
+					var mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
+					var obj3d = new THREE.Object3D();
+					obj3d.add(mesh);
+					demo.visuals.push(obj3d);
+					demo.scene.add(obj3d);
+				});*/
+				
+				//createGlow(obj3dtest, 'DANGER');
         //demo.addVisual(bolide);
         // spawnBolide(bolide);
       });
