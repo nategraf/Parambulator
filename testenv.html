@@ -43,7 +43,7 @@
 		
 		//these two lines are testing
 		var ArkletsPerLayer = 9;	//must be a perfect square; getting an error right now
-		var subLayer = Math.sqrt(ArkletsPerLayer);
+		var sAPL = Math.sqrt(ArkletsPerLayer);
 		
         var demo = new CANNON.Demo();
 
@@ -112,13 +112,14 @@
 		
 		function LayerLine(i){	//returns which line in a layer the arklet should spawn in
 			//influences y direction
-			var line = Math.ceil(((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) / Math.sqrt(ArkletsPerLayer)));
+			var line = Math.ceil(((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) / sAPL));
+			if(LinePos(i) == 0){ line += 1;}
 			return line;
 		}
 		
 		function LinePos(i){	//returns where in a line an arklet should spawn
 			//influences x direction
-			var spot = (((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) % Math.sqrt(ArkletsPerLayer)))
+			var spot = (((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) % sAPL))
 			return spot;
 		}
 
@@ -161,7 +162,7 @@
 			var arklet = new CANNON.Body({
 			mass: 1,
 			//Notes: the +1 for each plane is so the arklets don't spawn touching izzy.
-			position: new CANNON.Vec3(x+1+(LayerLine(i)),y+1+(LayerNum(i)),z+1+(LinePos(i)))
+			position: new CANNON.Vec3(x-.75*sAPL+(LayerLine(i)),y+2+(LayerNum(i)),z-1+(LinePos(i)))
 			});
 
               arklet.addShape(shape);
@@ -180,17 +181,34 @@
               // Fore is pointing in the moon-planet direction
               arklet_to_planet.normalize();
               arklet_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
-			  /*
-			  var ArkletIzzyVector = new CANNON.Vec3();
-			  this.position.negate(ArkletIzzyVector);
-			  var distance = ArkletIzzyVector.length();
-			  console.log(distance);
-			  ArkletIzzyVector.normalize();
-			  var varPower = 2;
-			  if(distance > 55){varPower = 3};
-			  if(distance < 51){varPower = 1};
-			  ArkletIzzyVector.mult((GM*mass)/Math.pow(distance,varPower),this.force);*/
+				//Add in forces acting on Arklet here
+				
               }
+			  arklet.postStep = function(){
+				//Take out forces acting on Arklet here
+				
+				  /*var IzzyArkletVector = new CANNON.Vec3(arklet.position.x-izzy.position.x, arklet.position.y-izzy.position.y, arklet.position.z-izzy.position.z);
+				  var IzzyArkletDistance = IzzyArkletVector.length();
+				  console.log(IzzyArkletDistance);
+				  var xDistance = IzzyArkletVector.x;
+				  var yDistance = IzzyArkletVector.y;
+				  var zDistance = IzzyArkletVector.z;
+				  arklet.velocity.x = xDistance/IzzyArkletDistance;
+				  arklet.velocity.y = yDistance/IzzyArkletDistance;
+				  arklet.velocity.z = zDistance/IzzyArkletDistance;
+				  if(IzzyArkletDistance > 10){
+					arklet.velocity.x =arklet.velocity.x*(1.5);
+					arklet.velocity.y =arklet.velocity.y*(1.5);
+					arklet.velocity.z =arklet.velocity.z*(1.5);
+				  }
+				  if(IzzyArkletDistance < 2){
+					arklet.velocity.x =arklet.velocity.x*(0.9);
+					arklet.velocity.y =arklet.velocity.y*(0.9);
+					arklet.velocity.z =arklet.velocity.z*(0.9);
+					console.log("reduced speed to" + arklet.velocity);
+				  
+				  }*/
+			  }
 			             
 			arklets.push(arklet);   
           }
