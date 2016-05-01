@@ -30,19 +30,19 @@ CANNON.Demo = function(options){
         gz: 0,
         iterations: 3,
         tolerance: 0.0001,
-        spawnBolides: false, 
+        spawnBolides: false,
         size: .5,
-        redEarth: true, 
-        frequency: 30, 
-        //speed: 10, 
+        redEarth: true,
+        frequency: 30,
+        //speed: 10,
         //vx: 1,
         //vy: 1,
         //vz: 1,
-        a: 10, 
-        e: .002, 
-        i: 90, 
-        O: 1, 
-        o: 1, 
+        a: 10,
+        e: .002,
+        i: 90,
+        O: 1,
+        o: 1,
         k: 1e6,
         d: 3,
         scene: 0,
@@ -219,12 +219,12 @@ CANNON.Demo = function(options){
         settings.rendermode = mode;
     }
 
- 
+
 
 
   //Bolide stuff
 
-  
+
 
 
 
@@ -456,7 +456,7 @@ CANNON.Demo = function(options){
     var SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
     var camera, controls, renderer;
     var container;
-    var NEAR = 5, FAR = 2000;
+    var NEAR = 5, FAR = 1500;
     var sceneHUD, cameraOrtho, hudMaterial;
 
     var mouseX = 0, mouseY = 0;
@@ -473,10 +473,10 @@ CANNON.Demo = function(options){
         document.body.appendChild( container );
 
         // Camera
-        camera = new THREE.PerspectiveCamera( 24, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
+        camera = new THREE.PerspectiveCamera( 20, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
 
-        camera.up.set(0,0,1);
-        camera.position.set(0,30,20);
+        //camera.up.set(0,0,1);
+        camera.position.set(0,30,100);
 
         // SCENE
         scene = that.scene = new THREE.Scene();
@@ -699,7 +699,7 @@ CANNON.Demo = function(options){
 
             bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){
 
-            }); 
+            });
 
             bf.add(settings, 'redEarth').onChange(function(redEarth){
 
@@ -709,11 +709,11 @@ CANNON.Demo = function(options){
             });
 
             //bf.add(settings, 'speed').onChange(function(speed){
-            //   
+            //
             //});
 
             bf.add(settings, 'size').onChange(function(size){
-               
+
             });
 
             //bf.add(settings, 'vx').onChange(function(vx){
@@ -732,24 +732,24 @@ CANNON.Demo = function(options){
             });
             bf.add(settings, 'o').onChange(function(o){
             });
-  
+
             sceneFolder.open();
         }
 
-      
+
 
         // Trackball controls
         controls = new THREE.TrackballControls( camera, renderer.domElement );
-        controls.rotateSpeed = 1.0;
-        controls.zoomSpeed = 1.2;
+        controls.rotateSpeed = 15.0;
+        controls.zoomSpeed = 0.2;
         controls.panSpeed = 0.2;
         controls.noZoom = false;
-        controls.noPan = false;
+        controls.noPan = true;
         controls.staticMoving = false;
         controls.dynamicDampingFactor = 0.3;
         var radius = 100;
-        controls.minDistance = 0.0;
-        controls.maxDistance = radius * 1000;
+        controls.minDistance = 70;
+        controls.maxDistance = 510;
         //controls.keys = [ 65, 83, 68 ]; // [ rotateKey, zoomKey, panKey ]
         controls.screen.width = SCREEN_WIDTH;
         controls.screen.height = SCREEN_HEIGHT;
@@ -983,55 +983,55 @@ CANNON.Demo.prototype.getWorld = function(){
 };
 
 CANNON.Demo.prototype.getFrequency = function(){
-    return this.settings.frequency; 
+    return this.settings.frequency;
 }
 
 //CANNON.Demo.prototype.getSpeed = function(){
-//    return this.settings.speed;  
+//    return this.settings.speed;
 //}
 
 //CANNON.Demo.prototype.getVX = function(){
-//    return this.settings.vx; 
+//    return this.settings.vx;
 //}
 
 //CANNON.Demo.prototype.getVY = function(){
-//    return this.settings.vy; 
+//    return this.settings.vy;
 //}
 
 //CANNON.Demo.prototype.getVZ = function(){
-//    return this.settings.vz; 
+//    return this.settings.vz;
 //}
 
 CANNON.Demo.prototype.getA = function(){
-    return this.settings.a; 
+    return this.settings.a;
 }
 
 CANNON.Demo.prototype.getE = function(){
-    return this.settings.e; 
+    return this.settings.e;
 }
 
 CANNON.Demo.prototype.getI = function(){
-    return this.settings.i; 
+    return this.settings.i;
 }
 
 CANNON.Demo.prototype.getO = function(){
-    return this.settings.O; 
+    return this.settings.O;
 }
 
 CANNON.Demo.prototype.geto = function(){
-    return this.settings.o; 
+    return this.settings.o;
 }
 
 CANNON.Demo.prototype.getSpawnBolides = function(){
-    return this.settings.spawnBolides; 
+    return this.settings.spawnBolides;
 }
 
 CANNON.Demo.prototype.getSize = function(){
-    return this.settings.size; 
+    return this.settings.size;
 }
 
 CANNON.Demo.prototype.getRedEarth = function(){
-    return this.settings.redEarth; 
+    return this.settings.redEarth;
 }
 
 CANNON.Demo.prototype.addVisual = function(body){

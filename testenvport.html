@@ -267,12 +267,16 @@
 			    if(body instanceof CANNON.Body){
 			      var wireframe = settings.renderMode === "wireframe";
 						var obj = new THREE.Object3D();
+						var obj_extra = new THREE.Object3D();
 
 						for (var l = 0; l < body.shapes.length; l++) {
 							var shape = body.shapes[l];
 							var mesh;
 							switch(shape.type) {
+
 								case CANNON.Shape.types.SPHERE:
+									var cloudGeometry, cloudMaterial, cloudMesh;
+									var cloudTexture = new THREE.TextureLoader().load("img/cloud_combined_2048.jpg");
 									var sphere_geometry =
 										/*
 										* TODO figure out a way to change the polygon density,
@@ -281,8 +285,20 @@
 										* arguments varies based on what kind of object is being
 										* created.
 										*/
-										new THREE.SphereGeometry(shape.radius,25, 25);
+										new THREE.SphereGeometry(shape.radius,32, 32);
 									mesh = new THREE.Mesh(sphere_geometry, texture);
+									cloudGeometry = new THREE.SphereGeometry(
+										shape.radius+0.05, 32, 32
+									);
+									cloudMaterial = new THREE.MeshPhongMaterial({
+										map: cloudTexture,
+										side: THREE.DoubleSide,
+										opacity: 0.45,
+										transparent: true,
+										depthWrite: false
+									});
+									cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+									obj_extra.add(cloudMesh);
 									break;
 
 								case CANNON.Shape.types.PLANE:
@@ -426,13 +442,28 @@
 			    //mesh.useQuaternion = true;
 			    demo.scene.add(obj);
 			  }
+
+				if(obj_extra && (shape.type == CANNON.Shape.types.SPHERE)) {
+					demo.visuals.push(obj_extra);
+					demo.scene.add(obj_extra)
+				}
 			}
 			/*********************/
 			/* addVisual() - END */
 			/*********************/
 
+			function createGlow(body, type) {
 
+				switch (type) {
+					case WARNING:
+						
+						break;
 
+					case DANGER:
+
+						break;
+				}
+			}
 
       var i = 0;
       demo.addScene("Bolides", function(){
@@ -443,7 +474,7 @@
 				* TODO here is where the earth is generated, so here is where the
 				* textures will go
 				*/
-        var planetShape = new CANNON.Sphere(8);
+        var planetShape = new CANNON.Sphere(30);
         var planet = new CANNON.Body({ mass: 0 });
         planet.addShape(planetShape);
 
@@ -481,6 +512,21 @@
 
 
         addVisual(planet, material);
+
+				var starmap = new THREE.SphereGeometry(550,32,32);
+				var starMaterial = new THREE.MeshBasicMaterial();
+				starMaterial.map = new THREE.TextureLoader().load("img/stellar_map.jpg");
+				starMaterial.side = THREE.BackSide;
+				var starMesh = new THREE.Mesh(starmap, starMaterial);
+				var star3d = new THREE.Object3D();
+				star3d.add(starMesh);
+				if (starMesh && star3d) {
+					demo.visuals.push(star3d);
+					demo.scene.add(star3d);
+				} else {
+					console.log("Couldn't create star map");
+				}
+				star3d.add(starMesh);
         //demo.addVisual(bolide);
         // spawnBolide(bolide);
       });
