@@ -22,6 +22,7 @@
        * This will act like a force field.
        */
       
+		const VISUALIZEPROJECTIONS = false;
         const ZEROVEC = new CANNON.Vec3(0,0,0);
         const XUNITVEC = new CANNON.Vec3(1,0,0);
         const YUNITVEC = new CANNON.Vec3(0,1,0);
@@ -30,6 +31,7 @@
         const PREDICTIONSTEP = 0.5;
         const GM = 600;
         const M1 = GM/orb.constants.common.G;
+		const ARKLETTHRUST = 100;
 		var spawnArkletsOnce = true; 
 
         var space = false; 
@@ -86,7 +88,29 @@
                     body.collidePredicted = true;
                 });
                 world.addEventListener("postStep", function () {
-                    if (world.bodies.indexOf(body) != -1) {
+					if (world.bodies.indexOf(body) != -1) {
+                        orbitElems = body.orbitElems; // T0 (perihelion passage/epoch) may be NaN, which means the object has left orbit
+                        if(Number.isNaN(orbitElems[6])){
+                            // Hyperbolic orbit prediction, approximated by linear projection (Which is mostly good enough)
+                            projection.velocity.copy(body.velocity);
+                            body.position.vadd(body.velocity.scale(t), projection.position);
+                        }
+                        else{
+                            // Normal stable orbit prediction, using keplars equations provided by orb.js
+                            orbitElems[5] = world.dt * world.stepnumber + t;
+                            let cart = orb.position.keplerian(...orbitElems);
+                            projection.position = new CANNON.Vec3(...cart[0]);
+                            projection.velocity = new CANNON.Vec3(...cart[1]);
+                        }             
+                    }
+                    else {
+                        // If the body no longer exists, delete the projection
+                        if(VISUALIZEPROJECTIONS) demo.removeVisual(projection);
+                        world.removeBody(projection);
+                        // TODO This causes a minor error in javascript. Figure out how to fix it
+                    }
+                });
+                    /*if (world.bodies.indexOf(body) != -1) {
                         orbitElems[5] = world.dt * world.stepnumber + t;
                         let cart = orb.position.keplerian(...orbitElems);
                         projection.position = new CANNON.Vec3(...cart[0]);
@@ -98,10 +122,41 @@
                         world.removeBody(projection);
                         // TODO This causes a minor error in javascript. Figure out how to fix it
                     }
-                });
+                });*/
+                addCollisionAvoidance(body, projection, world);
                 world.addBody(projection);
-                //demo.addVisual(projection);
+                if(VISUALIZEPROJECTIONS) demo.addVisual(projection);
             }
+        }
+		
+		function addCollisionAvoidance(avoider, projection, world) {
+            projection.addEventListener("collide", function (e) {
+                let direction = new CANNON.Vec3;
+                if(projection === e.contact.bi){ // Check to see if this projection is bi or bj in the collision
+                    e.contact.ri.negate().unit(direction);
+                }
+                else{
+                    e.contact.rj.negate().unit(direction);
+                }
+                let thrust = direction.scale(ARKLETTHRUST);
+                avoider.force.vadd(thrust, avoider.force);
+                
+                avoider.needsOrbitalUpdate = true;
+            });
+        }
+		
+		function addBodyFollowing(follower, destination, world) {
+            destination.addEventListener("following", function (e) {
+				let FtoD = new Cannon.Vec3(folower.position.vsub(destination.position));
+				let temp = 0;
+				if(FtoD < 2){temp = -1;} //when too close to izzy
+				if(FtoD > 2){temp = 1;} //when too far from izzy
+				FtoD.normalize();
+                let thrust = FtoD.scale(ARKLETTHRUST * temp);
+                follower.force.vadd(thrust, follower.force);	//what does follower.force do here?
+                
+                follower.needsOrbitalUpdate = true;
+            });
         }
 		
 		function LayerNum(i){	//returns which layer an arklet should spawn in
@@ -161,7 +216,7 @@
 			  
 			var arklet = new CANNON.Body({
 			mass: 1,
-			//Notes: the +1 for each plane is so the arklets don't spawn touching izzy.
+			//Notes: need to make if statement which decides which direction is 'behind'
 			position: new CANNON.Vec3(x-.75*sAPL+(LayerLine(i)),y+2+(LayerNum(i)),z-1+(LinePos(i)))
 			});
 
@@ -217,12 +272,10 @@
       }
 
       function generateBolide(mass, world){
-              var redEarth = demo.getRedEarth(); 
-              var size = demo.getSize(); 
-              var shape = new CANNON.Sphere(size);            
-
+              let redEarth = demo.getRedEarth(); 
+              let size = demo.getSize(); 
+              let shape = new CANNON.Sphere(size);            
               let randomMult = 1;
-
               let a = demo.getA() + Math.random()*randomMult; 
               let e = demo.getE() + Math.random() * randomMult/5.0;
               let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
@@ -230,30 +283,41 @@
               let o = orb.common.deg2rad(demo.geto());
               let m0 = Math.PI * 2 * Math.random();
               let orbitElems = [a, e, i, O, o, world.dt * world.stepnumber, 0, m0, M1];
-              var cartesian = orb.position.keplerian(...orbitElems);
-
+              let cartesian = orb.position.keplerian(...orbitElems);
               var bolide = new CANNON.Body({
                 mass: mass, 
                 position: new CANNON.Vec3(...cartesian[0])
               });
-
               bolide.addShape(shape); 
               bolide.velocity.set(...cartesian[1]);
               bolide.linearDamping = 0.0;
               bolide.orbitElems = orbitElems; // Define our own member for storing the needed information
-
               bolide.preStep = function(){
                 // Get the vector pointing from the moon to the planet center
-                var bolide_to_planet = new CANNON.Vec3();
+                let bolide_to_planet = new CANNON.Vec3();
                 this.position.negate(bolide_to_planet);
                 // Get distance from planet to moon
-                var distance = bolide_to_planet.length();
+                let distance = bolide_to_planet.length();
                 // Now apply force on moon
                 // Fore is pointing in the moon-planet direction
                 bolide_to_planet.normalize();
-                bolide_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+                //bolide_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+				bolide_to_planet.scale((GM*mass)/Math.pow(distance,2), bolide_to_planet);
+                this.force.vadd(bolide_to_planet, this.force);
+              };
+			  
+			  bolide.postStep = function() {
+                  this.force.setZero();
+                  
+                  if(this.needsOrbitalUpdate){
+                      let x = this.position.toArray();
+                      let xDot = this.velocity.toArray();
+                      this.orbitElems = orb.position.stateToKepler(x, xDot, world.dt * world.stepnumber, M1); // Calculate the new orbital elements after a change in state
+                      let t0 = this.orbitElems[5];
+                      this.orbitElems.push(t0, 0, M1); // Append the reference elements of epoch, mean anomoly at epoch, and central mass
+                      this.needsOrbitalUpdate = false; // Set that this body no longer needs an update                   
+                  }
               }
-
 
               return bolide; 
       }
@@ -392,7 +456,11 @@
           var moonShape = new CANNON.Sphere(0.5);
 
           var planetShape = new CANNON.Sphere(8);   
-          var planet = new CANNON.Body({ mass: 0 });
+          var planet = new CANNON.Body({
+			mass: 0,
+			collisionFilterGroup:  (2 << (PREDICTIONTIME / PREDICTIONSTEP + 1)) - 1, // Collide with all of the projections and bolides
+              collisionFilterMask:  (2 << (PREDICTIONTIME / PREDICTIONSTEP + 1)) - 1 // Collide with all of the projections and bolides
+  		  });
           planet.addShape(planetShape);
 
                 // Use the preStep callback to apply the gravity force on the moon.
@@ -450,6 +518,10 @@
 			if(spawnArklets && spawnArkletsOnce){
               var arklets = generateArkletCloud(numberOfArklets); 
               for(var i = 0; i<arklets.length; i++){
+				  addTimeStepPathPrediction(arklets, world); // Add the path projections!
+                  addCollisionBehavior(arklets, world);
+				  addBodyFollowing(arklets, izzy, world);		//question: all 3 parameters? the others
+																//just seem to use 2.  Why?
                   world.addBody(arklets[i]);
                   demo.addVisual(arklets[i]); 
               }
@@ -461,7 +533,7 @@
                 if((index % frequency) == 0){
                 var bolide = generateBolide(5, world);
                 addTimeStepPathPrediction(bolide, world); // Add the path projections!
-                addCollisionBehavior(bolide, world)
+                addCollisionBehavior(bolide, world)	//no ";"?
                 
                 world.addBody(bolide); 
                 demo.addVisual(bolide); 
