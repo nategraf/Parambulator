@@ -30,9 +30,9 @@ CANNON.Demo = function(options){
         gz: 0,
         iterations: 3,
         tolerance: 0.0001,
-        spawnBolides: false, 
-        spawnArklets: false, 
-        numberOfArklets: 10, 
+        spawnBolides: false,
+		spawnArklets: false, 
+        numberOfArklets: 10, 		
         size: .5,
         redEarth: true, 
         frequency: 30, 
@@ -40,7 +40,7 @@ CANNON.Demo = function(options){
         //vx: 1,
         //vy: 1,
         //vz: 1,
-        space: false,
+		space: false,
         b: false, 
         left: false,
         up: false, 
@@ -694,8 +694,8 @@ CANNON.Demo = function(options){
 
             //Spawn Bolides
             var bf = gui.addFolder('Spawn Bolides');
-
-            bf.add(settings, 'spawnArklets').onChange(function(spawnArklets){
+			
+			bf.add(settings, 'spawnArklets').onChange(function(spawnArklets){
 
             });
 
@@ -847,17 +847,16 @@ CANNON.Demo = function(options){
 
         if(e.keyCode){
             switch(e.keyCode){
-            //TODO add cases for space, ctrl, and all arrows
-            case 32: // Space - forward
-                settings.space = true; 
+				//TODO add cases for space, ctrl, and all arrows
+            case 32: // Space - forward, previously restart
+                settings.space = true;  //restartCurrentScene();
                 break;
-      
 
             case 98: //b backward
                 settings.b = true
                 break; 
-
-            case 104: // h - toggle widgets
+				
+			case 104: // h - toggle widgets
                 if(stats.domElement.style.display=="none"){
                     stats.domElement.style.display = "block";
                     info.style.display = "block";
@@ -1072,7 +1071,6 @@ CANNON.Demo.prototype.getNumberOfArklets = function(){
 CANNON.Demo.prototype.getSize = function(){
     return this.settings.size; 
 }
-
 
 CANNON.Demo.prototype.getSpace = function(){
     return this.settings.space; 
