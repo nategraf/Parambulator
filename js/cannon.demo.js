@@ -456,7 +456,7 @@ CANNON.Demo = function(options){
     var SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
     var camera, controls, renderer;
     var container;
-    var NEAR = 5, FAR = 5000;
+    var NEAR = 5, FAR = 8000;
     var sceneHUD, cameraOrtho, hudMaterial;
 
     var mouseX = 0, mouseY = 0;
@@ -476,21 +476,22 @@ CANNON.Demo = function(options){
         camera = new THREE.PerspectiveCamera( 30, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
 
         //camera.up.set(0,0,1);
-        camera.position.set(0,30,100);
+        camera.position.set(0,0,100);
 
         // SCENE
         scene = that.scene = new THREE.Scene();
-        scene.fog = new THREE.Fog( 0x222222, 1000, FAR );
+        scene.fog = new THREE.Fog( 0x222222, 1000, FAR+100 );
 
         // LIGHTS
-        ambient = new THREE.AmbientLight( 0x222222 );
-        scene.add( ambient );
+        //ambient = new THREE.AmbientLight( 0xf0f0f0 );
+        //scene.add( ambient );
 
-        light = new THREE.SpotLight( 0xffffff );
-        light.position.set( 30, 30, 40 );
+        light = new THREE.DirectionalLight( 0xffffff );
+        light.position.set( -1500, 0, 0 );
         light.target.position.set( 0, 0, 0 );
 
         light.castShadow = true;
+				light.intensity = 1.5;
 
         light.shadowCameraNear = 10;
         light.shadowCameraFar = 100;//camera.far;
@@ -501,13 +502,14 @@ CANNON.Demo = function(options){
         light.shadowMapWidth = SHADOW_MAP_WIDTH;
         light.shadowMapHeight = SHADOW_MAP_HEIGHT;
 
+
         //light.shadowCameraVisible = true;
 
         scene.add( light );
         scene.add( camera );
 
         // RENDERER
-        renderer = new THREE.WebGLRenderer( { clearColor: 0x000000, clearAlpha: 1, antialias: false } );
+        renderer = new THREE.WebGLRenderer( { clearColor: 0x000000, clearAlpha: 1, antialias: true, precision: "highp"} );
         renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
         renderer.domElement.style.position = "relative";
         renderer.domElement.style.top = MARGIN + 'px';
@@ -744,8 +746,8 @@ CANNON.Demo = function(options){
         controls.zoomSpeed = 0.2;
         //controls.panSpeed = 0.2;
         controls.noZoom = false;
-        controls.noPan = true;
-        controls.staticMoving = false;
+        controls.noPan = false;
+        controls.staticMoving = true;
         controls.dynamicDampingFactor = 0.3;
         var radius = 100;
         controls.minDistance = 70;

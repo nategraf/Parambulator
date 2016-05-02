@@ -25,11 +25,11 @@
     		vec3 vNormal = normalize( normalMatrix * normal );
 				vec3 vNormel = normalize( normalMatrix * viewVector );
 				intensity = pow( c - dot(vNormal, vNormel), p );
-	
+
     		gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 			}
 		</script>
-		<script id="fragmentShader" type="x-shader/x-vertex"> 
+		<script id="fragmentShader" type="x-shader/x-vertex">
 			uniform vec3 glowColor;
 			varying float intensity;
 			void main() {
@@ -469,33 +469,18 @@
 					demo.visuals.push(obj_extra);
 					demo.scene.add(obj_extra)
 				}
-				
+
 				return obj;
 			}
 			/*********************/
 			/* addVisual() - END */
 			/*********************/
-		
-			/*var customMaterial = new THREE.ShaderMaterial({
-	    		uniforms: 
-					{ 
-						"c":   { type: "f", value: 1.0 },
-						"p":   { type: "f", value: 1.4 },
-						glowColor: { type: "c", value: new THREE.Color(0xffff00) },
-						viewVector: { type: "v3", value: demo.camera.position }
-					},
-					vertexShader:   document.getElementById( 'vertexShader'   ).textContent,
-					fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-					side: THREE.FrontSide,
-					blending: THREE.AdditiveBlending,
-					transparent: true
-				});*/
 
 			/*only to be used with spheres*/
 			function createGlow(object, type) {
 				if (object instanceof THREE.Object3D) {
 					var objMesh = object.children[0];
-					var glowGeometry = objMesh.geometry.clone(); 
+					var glowGeometry = objMesh.geometry.clone();
 					glowGeometry.radius = objMesh.geometry.radius+(objMesh.geometry.radius*0.01);
 					var glowMaterial;
 					switch (type) {
@@ -520,7 +505,7 @@
 								opacity: 0.6
 							});
 							break;
-						
+
 						case 'THRUST':
 							glowMaterial = new THREE.MeshBasicMaterial({
 								color: 0xa807ba,
@@ -532,7 +517,7 @@
 							});
 							break;
 					}
-					
+
 					var glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
 					var glow3d = new THREE.Object3D();
 					glow3d.add(glowMesh);
@@ -544,12 +529,12 @@
 					}
 					glow3d.add(glowMesh);
 					} else {
-						console.log("ERROR: Arg[0] for createGlow() must be of" + 
+						console.log("ERROR: Arg[0] for createGlow() must be of" +
 							" type THREE.Object3D.");
 					}
 				}
-			
-	
+
+
       var i = 0;
       demo.addScene("Bolides", function(){
         var world = demo.getWorld();
@@ -594,18 +579,155 @@
 					map : imgTexture,
 					bumpMap: imgTextureBump,
 				})
-
-
       	addVisual(planet, material);
 
-				var starmap = new THREE.SphereGeometry(1024,32,32);
+				var mercuryTexture = new THREE.TextureLoader().load("img/mercurymap.jpg");
+				var mercuryBump = new THREE.TextureLoader().load("img/mercurybump.jpg");
+				var mercuryMaterial = new THREE.MeshPhongMaterial({
+					map: mercuryTexture,
+					bumpMap: mercuryBump
+				});
+				var mercury = new THREE.SphereGeometry(5,32,32);
+				var mercuryMesh = new THREE.Mesh(mercury, mercuryMaterial);
+				var merc3d = new THREE.Object3D();
+				merc3d.add(mercuryMesh);
+				merc3d.position.set(-1000,0,100);
+				demo.visuals.push(merc3d);
+				demo.scene.add(merc3d);
+
+				var venus = new THREE.SphereGeometry(18,32,32);
+				var venusTexture = new THREE.TextureLoader().load("img/venusmap.jpg");
+				var venusBump = new THREE.TextureLoader().load("img/venusbump.jpg");
+				var venusMaterial = new THREE.MeshPhongMaterial({
+					map: venusTexture,
+					bumpMap: venusBump
+				});
+				var venusMesh = new THREE.Mesh(venus, venusMaterial);
+				var venus3d = new THREE.Object3D();
+				venus3d.add(venusMesh);
+				venus3d.position.set(-500,0,-70);
+				demo.visuals.push(venus3d);
+				demo.scene.add(venus3d);
+
+				var mars = new THREE.SphereGeometry(10,32,32);
+				var marsTexture = new THREE.TextureLoader().load("img/mars_1k_color.jpg");
+				var marsBump = new THREE.TextureLoader().load("img/marsbump1k.jpg");
+				var marsMaterial = new THREE.MeshPhongMaterial({
+					map: marsTexture,
+					bumpMap: marsBump
+				});
+				var marsMesh = new THREE.Mesh(mars, marsMaterial);
+				var mars3d = new THREE.Object3D();
+				mars3d.add(marsMesh);
+				mars3d.position.set(400,0,-100);
+				demo.visuals.push(mars3d);
+				demo.scene.add(mars3d);
+
+
+				var jupiter = new THREE.SphereGeometry(160,32,32);
+				var jupiterTexture = new THREE.TextureLoader().load("img/jupiter2_1k.jpg");
+				var jupiterMaterial = new THREE.MeshPhongMaterial({
+					map: jupiterTexture
+				});
+				var jupiterMesh = new THREE.Mesh(jupiter, jupiterMaterial);
+				var jupiter3d = new THREE.Object3D();
+				jupiter3d.add(jupiterMesh);
+				jupiter3d.position.set(900,0,500);
+				demo.visuals.push(jupiter3d);
+				demo.scene.add(jupiter3d);
+
+
+				var saturn = new THREE.SphereGeometry(130,32,32);
+				var saturnTexture = new THREE.TextureLoader().load("img/saturnmap.jpg");
+				var saturnMaterial = new THREE.MeshPhongMaterial({
+					map: saturnTexture
+				});
+				var saturnMesh = new THREE.Mesh(saturn, saturnMaterial);
+				var saturn3d = new THREE.Object3D();
+				saturn3d.add(saturnMesh);
+				saturn3d.position.set(1500,0,-150);
+				demo.visuals.push(saturn3d);
+				demo.scene.add(saturn3d);
+
+				var saturnRing = new THREE.RingGeometry(150,230,30,30);
+				var saturnRingTexture = new THREE.TextureLoader().load("img/saturnringcolor.jpg");
+				var saturnRingMaterial = new THREE.MeshBasicMaterial({
+					map: saturnRingTexture
+				});
+				var saturnRingMesh = new THREE.Mesh(saturnRing, saturnRingMaterial);
+				//saturnRingMesh.lookAt(0.5,-4,1);
+				//saturnRingMesh.rotation.set(euler);
+				//saturnRingMesh.rotateOnAxis(new THREE.Vector3(1,0,0), 1.57);
+				var saturnRing3d = new THREE.Object3D();
+				saturnRing3d.add(saturnRingMesh);
+				saturnRing3d.position.set(1500,0,-150);
+				var euler = new THREE.Euler(0,0,1.57, 'XYZ');
+				//saturnRing3d.rotation.set(new THREE.Vector3(0,0,Math.PI/2));
+				//saturnRing3d.rotateOnAxis(new THREE.Vector3(1,0,0), 1.57);
+				demo.visuals.push(saturnRing3d);
+				demo.scene.add(saturnRing3d);
+
+
+				var uranus = new THREE.SphereGeometry(70,32,32);
+				var uranusTexture = new THREE.TextureLoader().load("img/uranusmap.jpg");
+				var uranusMaterial = new THREE.MeshPhongMaterial({
+					map: uranusTexture
+				});
+				var uranusMesh = new THREE.Mesh(uranus, uranusMaterial);
+				var uranus3d = new THREE.Object3D();
+				uranus3d.add(uranusMesh);
+				uranus3d.position.set(1900,0,-400);
+				demo.visuals.push(uranus3d);
+				demo.scene.add(uranus3d);
+
+				var uranusRing = new THREE.RingGeometry(72,140,30,30);
+				var uranusRingTexture = new THREE.TextureLoader().load("img/uranusringcolour.jpg");
+				var uranusRingAlpha = new THREE.TextureLoader().load("img/uransringtrans.gif");
+				var uranusRingMaterial = new THREE.MeshBasicMaterial({
+					map: uranusRingTexture,
+					alphaMap: uranusRingAlpha,
+					//transparent: true,
+				});
+				var uranusRingMesh = new THREE.Mesh(uranusRing, uranusRingMaterial);
+				var uranusRing3d = new THREE.Object3D();
+				uranusRing3d.add(uranusRingMesh);
+				uranusRing3d.position.set(1900,0,-400);
+				demo.visuals.push(uranusRing3d);
+				demo.scene.add(uranusRing3d);
+
+
+				var neptune = new THREE.SphereGeometry(70,32,32);
+				var neptuneTexture = new THREE.TextureLoader().load("img/neptunemap.jpg");
+				var neptuneMaterial = new THREE.MeshPhongMaterial({
+					map: neptuneTexture
+				});
+				var neptuneMesh = new THREE.Mesh(neptune, neptuneMaterial);
+				var neptune3d = new THREE.Object3D();
+				neptune3d.add(neptuneMesh);
+				neptune3d.position.set(2200,0,180);
+				demo.visuals.push(neptune3d);
+				demo.scene.add(neptune3d);
+
+
+				var pluto = new THREE.SphereGeometry(10,32,32);
+				var plutoTexture = new THREE.TextureLoader().load("img/plutomap1k.jpg");
+				var plutoBump = new THREE.TextureLoader().load("img/plutobump1k.jpg");
+				var plutoMaterial = new THREE.MeshPhongMaterial({
+					map: plutoTexture,
+					bumpMap: plutoBump
+				});
+				var plutoMesh = new THREE.Mesh(pluto, plutoMaterial);
+				var pluto3d = new THREE.Object3D();
+				pluto3d.add(plutoMesh);
+				pluto3d.position.set(2500,0,400);
+				demo.visuals.push(pluto3d);
+				demo.scene.add(pluto3d);
+
+
+				var starmap = new THREE.SphereGeometry(4092,32,32);
 				var starMaterial = new THREE.MeshBasicMaterial();
+				//milkywaypan_brunier_2048.jpeg
 				starMaterial.map = new THREE.TextureLoader().load("img/milkywaypan_brunier_2048.jpeg");
-				//starMaterial.map.generateMipmaps = false;
-				//starMaterial.map.magFilter = THREE.LinearFilter;
-				//starMaterial.map.minFilter = THREE.LinearFilter;
-				//starMaterial.map.anisotropy = 4;
-				//starMaterial.map.needsUpdate = true;
 				starMaterial.side = THREE.DoubleSide;
 				starMaterial.transparent = true;
 				var starMesh = new THREE.Mesh(starmap, starMaterial);
@@ -618,12 +740,12 @@
 					console.log("Couldn't create star map");
 				}
 				//star3d.add(starMesh);
-				var sun = new THREE.SphereGeometry(200, 32, 32);
+				var sun = new THREE.SphereGeometry(800, 32, 32);
 				var sunMaterial = new THREE.MeshBasicMaterial();
 				sunMaterial.map = new THREE.TextureLoader().load("img/preview_sun.jpg");
 				var sunMesh = new THREE.Mesh(sun, sunMaterial);
 				var sun3d = new THREE.Object3D();
-				//sun3d.position.set(0,0,40);
+				sun3d.position.set(-3100,0,0);
 				sun3d.add(sunMesh);
 				if (sunMesh && sun3d) {
 					demo.visuals.push(sun3d);
@@ -631,8 +753,7 @@
 				} else {
 					console.log("ERROR: Couldn't generate sun.")
 				}
-				
-				
+
 				/*var Izzy = new THREE.JSONLoader().load("Seveneves_Izzy_THREE.json", function(geometry, materials) {
 					var mesh = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial(materials));
 					var obj3d = new THREE.Object3D();
@@ -640,7 +761,7 @@
 					demo.visuals.push(obj3d);
 					demo.scene.add(obj3d);
 				});*/
-				
+
 				//createGlow(obj3dtest, 'DANGER');
         //demo.addVisual(bolide);
         // spawnBolide(bolide);
