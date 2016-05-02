@@ -17,6 +17,7 @@
     <script src="js/smoothie.js"></script>
     <script src="dist/orb.min.js"></script>
 		<script src="js/BinaryLoader.js"></script>
+		<script src="js/ColladaLoader.js"></script>
     <script>
      	/**
      	* A demo showing how to use the preStep callback to add a force to a body.
@@ -684,7 +685,7 @@
 				var neptuneMesh = new THREE.Mesh(neptune, neptuneMaterial);
 				var neptune3d = new THREE.Object3D();
 				neptune3d.add(neptuneMesh);
-				neptune3d.position.set(2200,0,180);
+				neptune3d.position.set(2200,0,700);
 				demo.visuals.push(neptune3d);
 				demo.scene.add(neptune3d);
 
@@ -734,7 +735,26 @@
 					console.log("ERROR: Couldn't generate sun.")
 				}
 
-				/*var testBolide = new THREE.ObjectLoader().load("phobos.obj.bin", function(geometry, material) {
+				/*var bolide, bolideMaterial, bolideMesh, bolide3d;
+				var bolideLoader = new THREE.ColladaLoader();
+				bolideLoader.load('bolide_try4.dae', function (result) {
+					bolide = result.geometries;
+					bolideMaterial = result.materials;
+					bolideMesh = new THREE.Mesh(bolide, bolideMaterial);
+					bolide3d = new THREE.Object3D();
+					bolide3d.add(bolideMesh);
+					demo.visuals.push(bolide3d);
+					demo.scene.add(bolide3d);
+				});*/
+
+				/*var izzy = new THREE.ColladaLoader().load('Seveneves_Izzy.dae',
+					function(result) {
+						result.scene.
+						demo.visuals.push(result.scene);
+						demo.scene.add(result.scene);
+					})*/
+
+				/*var testBolide = new THREE.ObjectLoader().load("phobos.obj", function(geometry, material) {
 					var mesh = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial(material));
 					var obj3d = new THREE.Object3D();
 					obj3d.position.set(0,0,-200);
