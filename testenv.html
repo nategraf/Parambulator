@@ -21,6 +21,13 @@
        * A demo showing how to use the preStep callback to add a force to a body.
        * This will act like a force field.
        */
+	   
+	   
+	   /*
+	   danger = red, take corrective measures
+	   too far away = yellow
+	   need to correct velocity vector = some other indicator
+	   */
       
 		const VISUALIZEPROJECTIONS = false;
         const ZEROVEC = new CANNON.Vec3(0,0,0);
@@ -32,6 +39,11 @@
         const GM = 600;
         const M1 = GM/orb.constants.common.G;
 		const ARKLETTHRUST = 100;
+		const FOLLOWTHRUST = 20;
+		const CORRECTIONTHRUST = 20;
+		const CORRECTIONTHRESHOLD = 1;
+		const INNERENVELOPE = 5;
+		const OUTERENVELOPE = 15;
 		var spawnArkletsOnce = true; 
 
         var space = false; 
@@ -68,8 +80,8 @@
                 orbitElems = body.orbitElems;
             }
             else {
-                let x = [body.position.x, body.position.y, body.position.z];
-                let xDot = [body.velocity.x, body.velocity.y, body.velocity.z];
+                let x = body.position.toArray();
+                let xDot = body.velocity.toArray();
                 orbitElems = orb.position.stateToKepler(x, xDot, 0, M1);
             }
             let projectionShape = new CANNON.Sphere(body.shapes[0].radius); // WARNING: Only works for spherical bodies
@@ -110,19 +122,6 @@
                         // TODO This causes a minor error in javascript. Figure out how to fix it
                     }
                 });
-                    /*if (world.bodies.indexOf(body) != -1) {
-                        orbitElems[5] = world.dt * world.stepnumber + t;
-                        let cart = orb.position.keplerian(...orbitElems);
-                        projection.position = new CANNON.Vec3(...cart[0]);
-                        projection.velocity = new CANNON.Vec3(...cart[1]);
-                    }
-                    else {
-                        // If the body no longer exists, delete the projection
-                        //demo.removeVisual(projection);
-                        world.removeBody(projection);
-                        // TODO This causes a minor error in javascript. Figure out how to fix it
-                    }
-                });*/
                 addCollisionAvoidance(body, projection, world);
                 world.addBody(projection);
                 if(VISUALIZEPROJECTIONS) demo.addVisual(projection);
@@ -146,15 +145,19 @@
         }
 		
 		function addBodyFollowing(follower, destination, world) {
-            destination.addEventListener("following", function (e) {
-				let FtoD = new Cannon.Vec3(folower.position.vsub(destination.position));
+            world.addEventListener("preStep", function (e) {
+				let FtoD = new CANNON.Vec3();
+				follower.position.vsub(destination.position, FtoD);
 				let temp = 0;
-				if(FtoD < 2){temp = -1;} //when too close to izzy
-				if(FtoD > 2){temp = 1;} //when too far from izzy
+				console.log(FtoD.length());
+				if(FtoD.length() < 2){temp = -1;} //when too close to izzy
+				if(FtoD.length() > 2){temp = 1;} //when too far from izzy
+				//console.log("temp is " + temp);
 				FtoD.normalize();
                 let thrust = FtoD.scale(ARKLETTHRUST * temp);
+				console.log("thrust is " + follower.force + " before");
                 follower.force.vadd(thrust, follower.force);	//what does follower.force do here?
-                
+                console.log("thrust is " + follower.force + " after");
                 follower.needsOrbitalUpdate = true;
             });
         }
@@ -185,7 +188,7 @@
         return onwards; 
       }
 	  
-	  function generateArkletCloud(n){
+	  function generateArkletCloud(n, world){
           var izzyPosition = izzy.position; 
           
           var mass = 1; 
@@ -197,7 +200,8 @@
           var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
           var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
           var o = orb.common.deg2rad(demo.geto());
-          var cartesian = orb.position.keplerian(a, e, i, O, o, 0, 0, 0, M1); 
+		  let orbitElems = [a, e, i, O, o, 0, 0, 0, M1]
+          var cartesian = orb.position.keplerian(...orbitElems);
 
 		  var x = izzy.x;
 		  var y= izzy.y;
@@ -215,10 +219,13 @@
               var even = 1;
 			  
 			var arklet = new CANNON.Body({
-			mass: 1,
-			//Notes: need to make if statement which decides which direction is 'behind'
-			position: new CANNON.Vec3(x-.75*sAPL+(LayerLine(i)),y+2+(LayerNum(i)),z-1+(LinePos(i)))
+				mass: 1,
+				//Notes: need to make if statement which decides which direction is 'behind'
+				position: new CANNON.Vec3(x-.75*sAPL+(LayerLine(i)),y+2+(LayerNum(i)),z-1+(LinePos(i)))
 			});
+			arklet.orbitElems = orbitElems;
+			arklet.needsOrbitalUpdate = true;
+			
 
               arklet.addShape(shape);
 			  //Change this line, a lot will be replacing this
@@ -227,43 +234,63 @@
 
               arklet.preStep = function(){
 			  
-              // Get the vector pointing from the moon to the planet center
-              var arklet_to_planet = new CANNON.Vec3();
-              this.position.negate(arklet_to_planet);
-              // Get distance from planet to moon
-              var distance = arklet_to_planet.length();
-              // Now apply force on moon
-              // Fore is pointing in the moon-planet direction
-              arklet_to_planet.normalize();
-              arklet_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+				// Get the vector pointing from the moon to the planet center
+				var arklet_to_planet = new CANNON.Vec3();
+				this.position.negate(arklet_to_planet);
+				// Get distance from planet to moon
+				var distance = arklet_to_planet.length();
+				// Now apply force on moon
+				// Fore is pointing in the moon-planet direction
+				arklet_to_planet.normalize();
+				arklet_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
 				//Add in forces acting on Arklet here
+					
+				let FtoD = new CANNON.Vec3();
+				this.position.vsub(izzy.position, FtoD);
+				let modFollowForce = 0;
+				console.log(FtoD.length());
+				
+				/*
+				Need to find a force vector going in the direction which pushes the arklet in the direction
+				of izzy, and add this to the arklet using vadd
+				*/
+				if(!this.velocity.almostEquals(izzy.velocity, CORRECTIONTHRESHOLD)){
+					let correctionalVector = new CANNON.Vec3();
+					izzy.velocity.vsub(this.velocity, correctionalVector);
+					correctionalVector.normalize();
+					let correctionalThrust = correctionalVector.scale(CORRECTIONTHRUST);
+					this.force.vadd(correctionalThrust, this.force);
+					this.needsOrbitalUpdate = true;
+					console.log("current velocity is " + this.velocity);
+				}
+				if(FtoD.length() < 5){
+					modFollowForce = -0.1*(FtoD.length()-INNERENVELOPE);
+					this.needsOrbitalUpdate = true;
+				} //when too close to izzy
+				if(FtoD.length() > 15){
+					modFollowForce = -0.1*(FtoD.length()-OUTERENVELOPE);
+					this.needsOrbitalUpdate = true;
+				} //when too far from izzy
+				FtoD.normalize();
+				let thrust = FtoD.scale(FOLLOWTHRUST * modFollowForce);
+				console.log("thrust is " + this.force + " before");
+				this.force.vadd(thrust, this.force);	//what does follower.force do here?
+				console.log("thrust is " + this.force + " after");
+				
 				
               }
 			  arklet.postStep = function(){
-				//Take out forces acting on Arklet here
-				
-				  /*var IzzyArkletVector = new CANNON.Vec3(arklet.position.x-izzy.position.x, arklet.position.y-izzy.position.y, arklet.position.z-izzy.position.z);
-				  var IzzyArkletDistance = IzzyArkletVector.length();
-				  console.log(IzzyArkletDistance);
-				  var xDistance = IzzyArkletVector.x;
-				  var yDistance = IzzyArkletVector.y;
-				  var zDistance = IzzyArkletVector.z;
-				  arklet.velocity.x = xDistance/IzzyArkletDistance;
-				  arklet.velocity.y = yDistance/IzzyArkletDistance;
-				  arklet.velocity.z = zDistance/IzzyArkletDistance;
-				  if(IzzyArkletDistance > 10){
-					arklet.velocity.x =arklet.velocity.x*(1.5);
-					arklet.velocity.y =arklet.velocity.y*(1.5);
-					arklet.velocity.z =arklet.velocity.z*(1.5);
-				  }
-				  if(IzzyArkletDistance < 2){
-					arklet.velocity.x =arklet.velocity.x*(0.9);
-					arklet.velocity.y =arklet.velocity.y*(0.9);
-					arklet.velocity.z =arklet.velocity.z*(0.9);
-					console.log("reduced speed to" + arklet.velocity);
-				  
-				  }*/
-			  }
+                  this.force.setZero();
+                  
+                  if(this.needsOrbitalUpdate){
+                      let x = this.position.toArray();
+                      let xDot = this.velocity.toArray();
+                      this.orbitElems = orb.position.stateToKepler(x, xDot, world.dt * world.stepnumber, M1); // Calculate the new orbital elements after a change in state
+                      let t0 = this.orbitElems[5];
+                      this.orbitElems.push(t0, 0, M1); // Append the reference elements of epoch, mean anomoly at epoch, and central mass
+                      this.needsOrbitalUpdate = false; // Set that this body no longer needs an update                   
+                  }
+              }
 			             
 			arklets.push(arklet);   
           }
@@ -516,11 +543,11 @@
             }
 			
 			if(spawnArklets && spawnArkletsOnce){
-              var arklets = generateArkletCloud(numberOfArklets); 
+              var arklets = generateArkletCloud(numberOfArklets, world); 
               for(var i = 0; i<arklets.length; i++){
-				  addTimeStepPathPrediction(arklets, world); // Add the path projections!
-                  addCollisionBehavior(arklets, world);
-				  addBodyFollowing(arklets, izzy, world);		//question: all 3 parameters? the others
+				  addTimeStepPathPrediction(arklets[i], world); // Add the path projections!
+                  addCollisionBehavior(arklets[i], world);
+				  //addBodyFollowing(arklets[i], izzy, world);		//question: all 3 parameters? the others
 																//just seem to use 2.  Why?
                   world.addBody(arklets[i]);
                   demo.addVisual(arklets[i]); 
