@@ -144,6 +144,7 @@
 		        let thrust = direction.scale(AVOIDANCETHRUST);
 		        avoider.force.vadd(thrust, avoider.force);
 		        avoider.needsOrbitalUpdate = true;
+						createGlow(avoider.visualref, "DANGER");
 		        avoider.maneuvering = true;
 		      }
         });
@@ -182,26 +183,13 @@
 		        body.force.vadd(thrust, body.force);
 
 		        body.needsOrbitalUpdate = true;
+						createGlow(body.visualref, "DANGER");
 		      }
 		    });
 
 		    world.addBody(bubble);
 		    if (VISUALIZEPROJECTIONS) demo.addVisual(bubble);
 		}
-		
-			function addBodyFollowing(follower, destination, world) {
-        world.addEventListener("preStep", function (e) {
-					let FtoD = new CANNON.Vec3();
-					follower.position.vsub(destination.position, FtoD);
-					let temp = 0;
-					if(FtoD.length() < 2){temp = -1;} //when too close to izzy
-					if(FtoD.length() > 2){temp = 1;} //when too far from izzy
-					FtoD.normalize();
-          let thrust = FtoD.scale(AVOIDANCETHRUST * temp);
-          follower.force.vadd(thrust, follower.force);
-          follower.needsOrbitalUpdate = true;
-        });
-      }
 		
 			function LayerNum(i) {	//returns which layer an arklet should spawn in
 				//influences z direction
@@ -286,6 +274,7 @@
 							correctionalVector.normalize();
 							let correctionalThrust = correctionalVector.scale(CORRECTIONTHRUST);
 							this.force.vadd(correctionalThrust, this.force);
+							createGlow(this.visualref, "THRUST");
 							this.needsOrbitalUpdate = true;
 						}
 						if(FtoD.length() < 5){
@@ -299,9 +288,9 @@
 						FtoD.normalize();
 						let thrust = FtoD.scale(FOLLOWTHRUST * modFollowForce);
 						this.force.vadd(thrust, this.force);
-				
-				
+						createGlow(this.visualref, "WARNING");		
           }
+					
 					arklet.postStep = function(){
 			      this.force.setZero();
 			      if (this.maneuvering) {
