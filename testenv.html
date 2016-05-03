@@ -1,13 +1,15 @@
 ﻿<!DOCTYPE html>
 <html>
   <head>
-    <title>cannon.js - callbacks demo</title>
+    <title>Parambulator</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="css/style.css" type="text/css"/>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
   </head>
   <body>
-          <audio src="space.mp3" autoplay>
+
+
+    <audio src="space.mp3" autoplay>
 
     <script src="js/cannon.min.js"></script>
     <script src="js/cannon.demo.js"></script>
@@ -333,7 +335,6 @@
       }
 
       function generateBolide(mass, world){
-                let redEarth = demo.getRedEarth(); 
                 let size = demo.getSize(); 
                 let shape = new CANNON.Sphere(size);            
                 let randomMult = 1;
@@ -376,17 +377,17 @@
                 bolide.linearDamping = 0.0;
                 bolide.orbitElems = orbitElems; // Define our own member for storing the needed information
                 bolide.preStep = function(){
-                // Get the vector pointing from the moon to the planet center
-                let bolide_to_planet = new CANNON.Vec3();
-                this.position.negate(bolide_to_planet);
-                // Get distance from planet to moon
-                let distance = bolide_to_planet.length();
-                // Now apply force on moon
-                // Fore is pointing in the moon-planet direction
-                bolide_to_planet.normalize();
-				bolide_to_planet.scale((GM*mass)/Math.pow(distance,2), bolide_to_planet);
-                this.force.vadd(bolide_to_planet, this.force);
-              };
+                    // Get the vector pointing from the moon to the planet center
+                    let bolide_to_planet = new CANNON.Vec3();
+                    this.position.negate(bolide_to_planet);
+                    // Get distance from planet to moon
+                    let distance = bolide_to_planet.length();
+                    // Now apply force on moon
+                    // Fore is pointing in the moon-planet direction
+                    bolide_to_planet.normalize();
+				    bolide_to_planet.scale((GM*mass)/Math.pow(distance,2), bolide_to_planet);
+                    this.force.vadd(bolide_to_planet, this.force);
+               };
 			  
 			  bolide.postStep = function() {
                   this.force.setZero();
