@@ -144,7 +144,7 @@
 		        let thrust = direction.scale(AVOIDANCETHRUST);
 		        avoider.force.vadd(thrust, avoider.force);
 		        avoider.needsOrbitalUpdate = true;
-						createGlow(avoider.visualref, "DANGER");
+						createGlow(avoider, "DANGER");
 		        avoider.maneuvering = true;
 		      }
         });
@@ -183,13 +183,13 @@
 		        body.force.vadd(thrust, body.force);
 
 		        body.needsOrbitalUpdate = true;
-						createGlow(body.visualref, "DANGER");
+						createGlow(body, "DANGER");
 		      }
 		    });
 
 		    world.addBody(bubble);
 		    if (VISUALIZEPROJECTIONS) demo.addVisual(bubble);
-		}
+			}
 		
 			function LayerNum(i) {	//returns which layer an arklet should spawn in
 				//influences z direction
@@ -274,7 +274,7 @@
 							correctionalVector.normalize();
 							let correctionalThrust = correctionalVector.scale(CORRECTIONTHRUST);
 							this.force.vadd(correctionalThrust, this.force);
-							createGlow(this.visualref, "THRUST");
+							createGlow(this, "THRUST");
 							this.needsOrbitalUpdate = true;
 						}
 						if(FtoD.length() < 5){
@@ -288,7 +288,7 @@
 						FtoD.normalize();
 						let thrust = FtoD.scale(FOLLOWTHRUST * modFollowForce);
 						this.force.vadd(thrust, this.force);
-						createGlow(this.visualref, "WARNING");		
+						createGlow(this, "WARNING");		
           }
 					
 					arklet.postStep = function(){
@@ -305,6 +305,7 @@
               this.orbitElems.push(t0, 0, M1); // Append the reference elements of epoch, mean anomoly at epoch, and central mass
               this.needsOrbitalUpdate = false; // Set that this body no longer needs an update                   
             }
+						createGlow(this, "NORMAL");
           }
 			             
 					arklets.push(arklet);   
@@ -474,29 +475,49 @@
       }
 	  
 			function createGlow(object, type) {
-				if (object.isArklet) {
+				if (object.visualref.isArklet) {
 					switch (type) {
 						case 'WARNING':
-							object.children[0].material.color = 0xffd000;
+							//object.visualref.children[0].material.color.set("yellow");
+							object.visualref.children[0].material = new THREE.MeshPhongMaterial({color: "yellow"});
+							object.visualref.children[0].material.needsUpdate = true;
+							object.visualref.children[0].geometry.colorsNeedUpdate = true;
+							object.visualref.children[0].geometry.elementsNeedUpdate = true;
 							break;
 
 						case 'DANGER':
-							object.children[0].material.color = 0xff0000;
+							//object.visualref.children[0].material.color.set("red");
+							object.visualref.children[0].material = new THREE.MeshPhongMaterial({color: "red"});
+							object.visualref.children[0].material.needsUpdate = true;
+							object.visualref.children[0].geometry.colorsNeedUpdate = true;
+							object.visualref.children[0].geometry.elementsNeedUpdate = true;
 							break;
 
 						case 'THRUST':
-							object.children[0].material.color = 0xa807ba;
+							//object.visualref.children[0].material.color.set("green");
+							object.visualref.children[0].material = new THREE.MeshPhongMaterial({color: "green"});
+							object.visualref.children[0].material.needsUpdate = true;
+							object.visualref.children[0].geometry.colorsNeedUpdate = true;
+							object.visualref.children[0].geometry.elementsNeedUpdate = true;
 							break;
 							
 						case 'NORMAL':
-							object.children[0].material.color = 0xffffff;
+							//object.visualref.children[0].material.color.set("white");
+							object.visualref.children[0].material = new THREE.MeshPhongMaterial({color: "white"});
+							object.visualref.children[0].material.needsUpdate = true;
+							object.visualref.children[0].geometry.colorsNeedUpdate = true;
+							object.visualref.children[0].geometry.elementsNeedUpdate = true;
 							break;
 					}
+					object.visualref.children[0].material.needsUpdate = true;
+					object.visualref.children[0].geometry.colorsNeedUpdate = true;
+					object.visualref.children[0].geometry.elementsNeedUpdate = true;
 					
 				} else {
 					console.log("ERROR: Arg[0] for createGlow() must be of" +
 							" type THREE.Object3D.");
 				}
+				
 			}
 		
       var index = 0; 
@@ -786,16 +807,13 @@
 					if(spawnArklets && spawnArkletsOnce){
             let arklets = generateArkletCloud(numberOfArklets, world); 
             for(let i = 0; i<arklets.length; i++){
-							addTimeStepPathPrediction(arklets[i], world, true); // Add the path projections!
-              addArkletCollisionBehavior(arklets[i], world);
-
-              world.addBody(arklets[i]);
+							world.addBody(arklets[i]);
               //demo.addVisual(arklets[i]); 
 							let arklet = new THREE.CylinderGeometry(0.2,0.35,0.4, 32, 32);
-							let arkletMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, shininess: 60});
+							let arkletMaterial = new THREE.MeshPhongMaterial({color: 0xffffff});
 							let arklet3d = new THREE.Object3D();
-							arklet3d.arkletMesh = new THREE.Mesh(arklet, arkletMaterial);
-							arklet3d.add(arklet3d.arkletMesh);
+							let arkletMesh = new THREE.Mesh(arklet, arkletMaterial);
+							arklet3d.add(arkletMesh);
 							arklet3d.isArklet = true;
 							arklet3d.position = arklets[i].position;
 							arklet3d.quaternion = arklets[i].quaternion;
@@ -803,6 +821,11 @@
 							arklets[i].visualref = arklet3d;
 							arklets[i].visualref.visualId = demo.bodies.length - 1;
 							demo.visuals.push(arklet3d);
+							
+							addTimeStepPathPrediction(arklets[i], world, true); // Add the path projections!
+              addArkletCollisionBehavior(arklets[i], world);
+
+              
 							demo.scene.add(arklet3d);
             }
             spawnArkletsOnce = false; 

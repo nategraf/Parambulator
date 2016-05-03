@@ -316,6 +316,10 @@ CANNON.Demo = function(options){
 							b.quaternion.normalize();
 							b.position.set(0,0,0);
 						}
+						if (b.isArklet) {
+							visual.geometry.colorsNeedUpdate = true;
+							visual.geoemtry.elementsNeedUpdate = true;
+						}
         }
 
         // Render contacts
