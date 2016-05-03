@@ -35,15 +35,16 @@
         const YUNITVEC = new CANNON.Vec3(0,1,0);
         const ZUNITVEC = new CANNON.Vec3(0, 0, 1);
         const PREDICTIONTIME = 3;
-        const PREDICTIONSTEP = 0.5;
+        const MINPREDICTIONSTEP = 0.025;
         const GM = 600;
         const M1 = GM/orb.constants.common.G;
-		const ARKLETTHRUST = 100;
+		const AVOIDANCETHRUST = 100;
 		const FOLLOWTHRUST = 20;
 		const CORRECTIONTHRUST = 20;
-		const CORRECTIONTHRESHOLD = 1;
-		const INNERENVELOPE = 5;
-		const OUTERENVELOPE = 15;
+		const CORRECTIONTHRESHOLD = 3;
+		const INNERENVELOPE = 7;
+		const OUTERENVELOPE = 17;
+		const PERSONALSPACEFACTOR = 5;
 		var spawnArkletsOnce = true; 
 
         var space = false; 
@@ -52,8 +53,6 @@
         var down = false; 
         var left = false; 
         var right = false; 
-        console.log(GM);
-        console.log(M1);
 		
 		//these two lines are testing
 		var ArkletsPerLayer = 9;	//must be a perfect square; getting an error right now
@@ -65,16 +64,11 @@
             body.addEventListener("collide", function (e) {
                 demo.removeVisual(this);
                 world.remove(this);
-                if(body.collidePredicted) {
-                    console.log("Predicted collision");
-                }
-                else {
-                    console.log("Unpredicted collision");
-                }
+                console.log("COLLISION!!!");
             });
         }
 
-        function addTimeStepPathPrediction(body, world) {
+        function addTimeStepPathPrediction(body, world, intelligent) {
             let orbitElems = [];
             if (body.orbitElems) {
                 orbitElems = body.orbitElems;
@@ -86,19 +80,15 @@
             }
             let projectionShape = new CANNON.Sphere(body.shapes[0].radius); // WARNING: Only works for spherical bodies
             projectionShape.collisionResponse = false;
-            for (let i = 1; i <= PREDICTIONTIME / PREDICTIONSTEP; i++) {
-                let t = i * PREDICTIONSTEP;
+            for (let i = 1; i <= Math.sqrt(PREDICTIONTIME / MINPREDICTIONSTEP) ; i++) {
+                let t = i * i * MINPREDICTIONSTEP;
                 let projection = new CANNON.Body({
                     mass: 1,
                     collisionFilterGroup: 2 << i,
                     collisionFilterMask: 2 << i
                 });
-                //let quat = new CANNON.Quaternion();
-                //quat.setFromEuler(orbitElems[2], -orbitElems[4], orbitElems[3], 'ZYX'); // TODO: Fix this
                 projection.addShape(projectionShape);
-                projection.addEventListener("collide", function (e) {
-                    body.collidePredicted = true;
-                });
+
                 world.addEventListener("postStep", function () {
 					if (world.bodies.indexOf(body) != -1) {
                         orbitElems = body.orbitElems; // T0 (perihelion passage/epoch) may be NaN, which means the object has left orbit
@@ -122,103 +112,145 @@
                         // TODO This causes a minor error in javascript. Figure out how to fix it
                     }
                 });
-                addCollisionAvoidance(body, projection, world);
+                if (intelligent) addCollisionAvoidance(body, projection, world);
+                if (intelligent) addPersonalSpace(body, world);
                 world.addBody(projection);
                 if(VISUALIZEPROJECTIONS) demo.addVisual(projection);
             }
         }
 		
 		function addCollisionAvoidance(avoider, projection, world) {
-            projection.addEventListener("collide", function (e) {
-                let direction = new CANNON.Vec3;
-                if(projection === e.contact.bi){ // Check to see if this projection is bi or bj in the collision
-                    e.contact.ri.negate().unit(direction);
-                }
-                else{
-                    e.contact.rj.negate().unit(direction);
-                }
-                let thrust = direction.scale(ARKLETTHRUST);
-                avoider.force.vadd(thrust, avoider.force);
-                
-                avoider.needsOrbitalUpdate = true;
+		    projection.addEventListener("collide", function (e) {
+		        if (!avoider.maneuvering) { // Dont add additioal force if the avoider is already thrusting, but the game is lagging
+		            let direction = new CANNON.Vec3();
+		            if (projection === e.contact.bi) { // Check to see if this projection is bi or bj in the collision
+		                e.contact.ri.negate().unit(direction);
+		            }
+		            else {
+		                e.contact.rj.negate().unit(direction);
+		            }
+		            let thrust = direction.scale(AVOIDANCETHRUST);
+		            avoider.force.vadd(thrust, avoider.force);
+
+		            avoider.needsOrbitalUpdate = true;
+		            avoider.maneuvering = true;
+		        }
             });
-        }
+		}
+
+		function addPersonalSpace(body, world) {
+		    let bubbleShape = new CANNON.Sphere(body.shapes[0].radius * PERSONALSPACEFACTOR); // WARNING: Only works for spherical bodies
+		    bubbleShape.collisionResponse = false;
+		    let bubble = new CANNON.Body({
+		        mass: 1,
+		        collisionFilterGroup: 2 << 15,
+		        collisonFilterMask: 2 << 15
+		    });
+		    bubble.addShape(bubbleShape);
+		    world.addEventListener("postStep", function () {
+		        if (world.bodies.indexOf(body) != -1) {
+		            bubble.velocity.copy(body.velocity);
+		            bubble.position.copy(body.position);
+		        }
+		        else {
+		            // If the body no longer exists, delete the projection
+		            if (VISUALIZEPROJECTIONS) demo.removeVisual(bubble);
+		            world.removeBody(bubble);
+		            // TODO This causes a minor error in javascript. Figure out how to fix it
+		        }
+		    });
+
+		    bubble.addEventListener("collide", function (e) {
+		        if (!this.maneuvering) {
+		            let direction = new CANNON.Vec3();
+		            if (bubble === e.contact.bi) { // Check to see if this projection is bi or bj in the collision
+		                e.contact.ri.negate().unit(direction);
+		            }
+		            else {
+		                e.contact.rj.negate().unit(direction);
+		            }
+		            let thrust = direction.scale(AVOIDANCETHRUST);
+		            body.force.vadd(thrust, body.force);
+
+		            body.needsOrbitalUpdate = true;
+		        }
+		    });
+
+		    world.addBody(bubble);
+		    if (VISUALIZEPROJECTIONS) demo.addVisual(bubble);
+		}
 		
 		function addBodyFollowing(follower, destination, world) {
             world.addEventListener("preStep", function (e) {
 				let FtoD = new CANNON.Vec3();
 				follower.position.vsub(destination.position, FtoD);
 				let temp = 0;
-				console.log(FtoD.length());
 				if(FtoD.length() < 2){temp = -1;} //when too close to izzy
 				if(FtoD.length() > 2){temp = 1;} //when too far from izzy
-				//console.log("temp is " + temp);
 				FtoD.normalize();
-                let thrust = FtoD.scale(ARKLETTHRUST * temp);
-				console.log("thrust is " + follower.force + " before");
-                follower.force.vadd(thrust, follower.force);	//what does follower.force do here?
-                console.log("thrust is " + follower.force + " after");
+                let thrust = FtoD.scale(AVOIDANCETHRUST * temp);
+                follower.force.vadd(thrust, follower.force);
                 follower.needsOrbitalUpdate = true;
             });
         }
 		
 		function LayerNum(i){	//returns which layer an arklet should spawn in
 			//influences z direction
-			var num = Math.floor(i / ArkletsPerLayer);
+			let num = Math.floor(i / ArkletsPerLayer);
 			return num;
 		}
 		
 		function LayerLine(i){	//returns which line in a layer the arklet should spawn in
 			//influences y direction
-			var line = Math.ceil(((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) / sAPL));
+			let line = Math.ceil(((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) / sAPL));
 			if(LinePos(i) == 0){ line += 1;}
 			return line;
 		}
 		
 		function LinePos(i){	//returns where in a line an arklet should spawn
 			//influences x direction
-			var spot = (((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) % sAPL))
+			let spot = (((i-(ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) % sAPL))
 			return spot;
 		}
 
       var spawnBolides = true; 
 	  
 	  function addForces(){
-        var onwards = demo.getSpace(); 
+        let onwards = demo.getSpace(); 
         return onwards; 
       }
 	  
 	  function generateArkletCloud(n, world){
-          var izzyPosition = izzy.position; 
+          let izzyPosition = izzy.position; 
           
-          var mass = 1; 
-          var randomMult = 1; 
-          //var shape = new CANNON.Cylinder(.2, .2, 1, 10); 
-		  var shape = new CANNON.Sphere(0.1);
-          var a = demo.getA() + Math.random()*randomMult; 
-          var e = demo.getE() + Math.random() * randomMult/5.0;
-          var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
-          var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
-          var o = orb.common.deg2rad(demo.geto());
+          let mass = 1; 
+          let randomMult = 1; 
+          //let shape = new CANNON.Cylinder(.2, .2, 1, 10); 
+		  let shape = new CANNON.Sphere(0.1);
+          let a = demo.getA() + Math.random()*randomMult; 
+          let e = demo.getE() + Math.random() * randomMult/5.0;
+          let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+          let O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+          let o = orb.common.deg2rad(demo.geto());
 		  let orbitElems = [a, e, i, O, o, 0, 0, 0, M1]
-          var cartesian = orb.position.keplerian(...orbitElems);
+          let cartesian = orb.position.keplerian(...orbitElems);
 
-		  var x = izzy.x;
-		  var y= izzy.y;
-		  var z = izzy.z;	//still overwritten right away
-		  var vx = izzy.vx;		//but allow for different spawn conditions
-		  var vy = izzy.vy;
-		  var vz = izzy.vz;
+		  let x = izzy.x;
+		  let y= izzy.y;
+		  let z = izzy.z;	//still overwritten right away
+		  let vx = izzy.vx;		//but allow for different spawn conditions
+		  let vy = izzy.vy;
+		  let vz = izzy.vz;
 
-          var arklets = new Array(); 
+          let arklets = new Array(); 
 
-          for(var i = 0; i < n; i++){
-              var x = izzy.position.x; 	//thse are already initialized above.  why a second time?
-              var y = izzy.position.y; 
-              var z = izzy.position.z;
-              var even = 1;
+          for(let i = 0; i < n; i++){
+              let x = izzy.position.x; 	//thse are already initialized above.  why a second time?
+              let y = izzy.position.y; 
+              let z = izzy.position.z;
+              let even = 1;
 			  
-			var arklet = new CANNON.Body({
+			let arklet = new CANNON.Body({
 				mass: 1,
 				//Notes: need to make if statement which decides which direction is 'behind'
 				position: new CANNON.Vec3(x-.75*sAPL+(LayerLine(i)),y+2+(LayerNum(i)),z-1+(LinePos(i)))
@@ -232,23 +264,23 @@
               arklet.velocity.set(izzy.velocity.x,izzy.velocity.y,izzy.velocity.z); 
               arklet.linearDamping = 0.0; 
 
-              arklet.preStep = function(){
-			  
+              arklet.preStep = function () {
 				// Get the vector pointing from the moon to the planet center
-				var arklet_to_planet = new CANNON.Vec3();
+				let arklet_to_planet = new CANNON.Vec3();
 				this.position.negate(arklet_to_planet);
 				// Get distance from planet to moon
-				var distance = arklet_to_planet.length();
+				let distance = arklet_to_planet.length();
 				// Now apply force on moon
 				// Fore is pointing in the moon-planet direction
 				arklet_to_planet.normalize();
-				arklet_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+				arklet_to_planet.scale((GM * mass) / Math.pow(distance, 2), arklet_to_planet);
+				this.force.vadd(arklet_to_planet, this.force);
 				//Add in forces acting on Arklet here
-					
+				
+                // Izzy Following
 				let FtoD = new CANNON.Vec3();
 				this.position.vsub(izzy.position, FtoD);
 				let modFollowForce = 0;
-				console.log(FtoD.length());
 				
 				/*
 				Need to find a force vector going in the direction which pushes the arklet in the direction
@@ -261,7 +293,6 @@
 					let correctionalThrust = correctionalVector.scale(CORRECTIONTHRUST);
 					this.force.vadd(correctionalThrust, this.force);
 					this.needsOrbitalUpdate = true;
-					console.log("current velocity is " + this.velocity);
 				}
 				if(FtoD.length() < 5){
 					modFollowForce = -0.1*(FtoD.length()-INNERENVELOPE);
@@ -273,15 +304,16 @@
 				} //when too far from izzy
 				FtoD.normalize();
 				let thrust = FtoD.scale(FOLLOWTHRUST * modFollowForce);
-				console.log("thrust is " + this.force + " before");
-				this.force.vadd(thrust, this.force);	//what does follower.force do here?
-				console.log("thrust is " + this.force + " after");
+				this.force.vadd(thrust, this.force);
 				
 				
               }
 			  arklet.postStep = function(){
-                  this.force.setZero();
-                  
+			      this.force.setZero();
+			      if (this.maneuvering) {
+			          this.maneuvering = false;
+			      }
+
                   if(this.needsOrbitalUpdate){
                       let x = this.position.toArray();
                       let xDot = this.velocity.toArray();
@@ -294,7 +326,6 @@
 			             
 			arklets.push(arklet);   
           }
-		console.log(arklets.length);
         return arklets;
       }
 
@@ -311,7 +342,7 @@
               let m0 = Math.PI * 2 * Math.random();
               let orbitElems = [a, e, i, O, o, world.dt * world.stepnumber, 0, m0, M1];
               let cartesian = orb.position.keplerian(...orbitElems);
-              var bolide = new CANNON.Body({
+              let bolide = new CANNON.Body({
                 mass: mass, 
                 position: new CANNON.Vec3(...cartesian[0])
               });
@@ -328,7 +359,6 @@
                 // Now apply force on moon
                 // Fore is pointing in the moon-planet direction
                 bolide_to_planet.normalize();
-                //bolide_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
 				bolide_to_planet.scale((GM*mass)/Math.pow(distance,2), bolide_to_planet);
                 this.force.vadd(bolide_to_planet, this.force);
               };
@@ -350,29 +380,22 @@
       }
 
 	  function generateIzzy(){
-          var mass = 1; 
-          var shape = new CANNON.Cylinder(1,1, 5, 10);  
-          var randomMult  = 1; 
-          var a = demo.getA() + Math.random()*randomMult; 
-          var e = demo.getE() + Math.random() * randomMult/5.0;
-          var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
-          var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
-          var o = orb.common.deg2rad(demo.geto());
-          var cartesian = orb.position.keplerian(a+40, e, i, O, o, 0, 0, 0, M1); 
+          let mass = 1; 
+          let shape = new CANNON.Cylinder(1, 1, 5, 10);  
+          let randomMult  = 1; 
+          let a = demo.getA() + Math.random()*randomMult; 
+          let e = demo.getE() + Math.random() * randomMult/5.0;
+          let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+          let O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+          let o = orb.common.deg2rad(demo.geto());
+          let cartesian = orb.position.keplerian(a+40, e, i, O, o, 0, 0, 0, M1);        
 
-          var x = cartesian[0][0]; 
-          var y = cartesian[0][1]; 
-          var z = cartesian[0][2]; 
-          var vx = (cartesian[1][0]);
-          var vy = (cartesian[1][1]);
-          var vz = (cartesian[1][2]);          
-
-          var izzy = new CANNON.Body({
+          let izzy = new CANNON.Body({
               mass: mass, 
-              position: new CANNON.Vec3(x,y,z)
+              position: new CANNON.Vec3(...cartesian[0])
               });
 
-          izzy.velocity.set(vx,vy,vz);
+          izzy.velocity.set(...cartesian[1]);
           izzy.linearDamping = 0.0; 
 
           izzy.addShape(shape); 
@@ -380,18 +403,17 @@
       izzy.preStep = function(){
                 forward = demo.getSpace(); 
                 // Get the vector pointing from the moon to the planet center
-                var izzy_to_planet = new CANNON.Vec3();
-                var temp = new CANNON.Vec3(); 
+                let izzy_to_planet = new CANNON.Vec3();
+                let temp = new CANNON.Vec3(); 
                 this.position.negate(temp); 
                 temp.normalize(); 
                 this.position.negate(izzy_to_planet);
               //   // Get distance from planet to moon
-                var distance = izzy_to_planet.length();
+                let distance = izzy_to_planet.length();
               //   // Now apply force on moon
               //   // Fore is pointing in the moon-planet direction
                 izzy_to_planet.normalize();
                 izzy_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
-                debugger;
 
                 if(space == true){
 
@@ -479,44 +501,38 @@
 		  index = 0;
 		  izzy = generateIzzy(); 
 		  
-          var world = demo.getWorld();
-          var moonShape = new CANNON.Sphere(0.5);
+          let world = demo.getWorld();
+          let moonShape = new CANNON.Sphere(0.5);
 
-          var planetShape = new CANNON.Sphere(8);   
-          var planet = new CANNON.Body({
+          let planetShape = new CANNON.Sphere(8);   
+          let planet = new CANNON.Body({
 			mass: 0,
-			collisionFilterGroup:  (2 << (PREDICTIONTIME / PREDICTIONSTEP + 1)) - 1, // Collide with all of the projections and bolides
-              collisionFilterMask:  (2 << (PREDICTIONTIME / PREDICTIONSTEP + 1)) - 1 // Collide with all of the projections and bolides
+			collisionFilterGroup:  (2 << (PREDICTIONTIME / MINPREDICTIONSTEP + 1)) - 1, // Collide with all of the projections and bolides
+              collisionFilterMask:  (2 << (PREDICTIONTIME / MINPREDICTIONSTEP + 1)) - 1 // Collide with all of the projections and bolides
   		  });
           planet.addShape(planetShape);
 
                 // Use the preStep callback to apply the gravity force on the moon.
                 // This callback is evoked each timestep.
             world.addEventListener("preStep", function() {
-			var numberOfArklets = demo.getNumberOfArklets(); 
-            var spawnArklets = demo.getSpawnArklets(); 
+			let numberOfArklets = demo.getNumberOfArklets(); 
+            let spawnArklets = demo.getSpawnArklets(); 
             spawnBolides = demo.getSpawnBolides(); 
-            var frequency = demo.getFrequency(); 
-			var forward = demo.getSpace();  
-            var backward = demo.getB(); 
-            var testAngular = demo.getLeft();
-            var testAngularOpposite = demo.getRight();  
-            var getUp = demo.getUp(); 
-            var getDown = demo.getDown();
+            let frequency = demo.getFrequency(); 
+			let forward = demo.getSpace();  
+            let backward = demo.getB(); 
+            let testAngular = demo.getLeft();
+            let testAngularOpposite = demo.getRight();  
+            let getUp = demo.getUp(); 
+            let getDown = demo.getDown();
 			
 			if(forward == true){
             space = true; 
-            // izzy.force.x += izzy.shapes[0].faceNormals[10].x*100; 
-            // izzy.force.y += izzy.shapes[0].faceNormals[10].y*100;
-            // izzy.force.z += izzy.shapes[0].faceNormals[10].z*100;
             demo.setSpace();                             
             }
 
             if(backward == true){
             b = true; 
-            // izzy.force.x -= izzy.shapes[0].faceNormals[10].x*100; 
-            // izzy.force.y -= izzy.shapes[0].faceNormals[10].y*100;
-            // izzy.force.z -= izzy.shapes[0].faceNormals[10].z*100;
             demo.setB();  
             }
 
@@ -543,12 +559,11 @@
             }
 			
 			if(spawnArklets && spawnArkletsOnce){
-              var arklets = generateArkletCloud(numberOfArklets, world); 
-              for(var i = 0; i<arklets.length; i++){
-				  addTimeStepPathPrediction(arklets[i], world); // Add the path projections!
+              let arklets = generateArkletCloud(numberOfArklets, world); 
+              for(let i = 0; i<arklets.length; i++){
+				  addTimeStepPathPrediction(arklets[i], world, true); // Add the path projections!
                   addCollisionBehavior(arklets[i], world);
-				  //addBodyFollowing(arklets[i], izzy, world);		//question: all 3 parameters? the others
-																//just seem to use 2.  Why?
+
                   world.addBody(arklets[i]);
                   demo.addVisual(arklets[i]); 
               }
@@ -558,13 +573,12 @@
 			
             if(spawnBolides){
                 if((index % frequency) == 0){
-                var bolide = generateBolide(5, world);
-                addTimeStepPathPrediction(bolide, world); // Add the path projections!
-                addCollisionBehavior(bolide, world)	//no ";"?
+                    let bolide = generateBolide(5, world);
+                    addTimeStepPathPrediction(bolide, world, false); // Add the path projections!
+                    addCollisionBehavior(bolide, world);
                 
-                world.addBody(bolide); 
-                demo.addVisual(bolide); 
-				debugger;
+                    world.addBody(bolide); 
+                    demo.addVisual(bolide); 
                 }
             }
 
@@ -573,15 +587,11 @@
 		  
 		  world.addBody(izzy); 
           demo.addVisual(izzy); 
-          debugger;
-          // We add the objects to the world to simulate them
           //demo.spawnBolide(bolide);
           world.addBody(planet);
-          //world.addBody(bolide); 
           // And we add them to the demo to make them visible
           demo.addVisual(planet);
-          //demo.addVisual(bolide); 
-         // spawnBolide(bolide); 
+
         });
         
         demo.start();
