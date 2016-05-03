@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <title>cannon.js - callbacks demo</title>
@@ -573,7 +573,7 @@
 				var merc3d = new THREE.Object3D();
 				merc3d.add(mercuryMesh);
 				merc3d.position.set(-1000,0,100);
-				demo.visuals.push(merc3d);
+				//demo.visuals.push(merc3d);
 				demo.scene.add(merc3d);
 
 				var venus = new THREE.SphereGeometry(18,32,32);
@@ -587,7 +587,7 @@
 				var venus3d = new THREE.Object3D();
 				venus3d.add(venusMesh);
 				venus3d.position.set(-500,0,-70);
-				demo.visuals.push(venus3d);
+				//demo.visuals.push(venus3d);
 				demo.scene.add(venus3d);
 
 				var mars = new THREE.SphereGeometry(10,32,32);
@@ -601,7 +601,7 @@
 				var mars3d = new THREE.Object3D();
 				mars3d.add(marsMesh);
 				mars3d.position.set(400,0,-100);
-				demo.visuals.push(mars3d);
+				//demo.visuals.push(mars3d);
 				demo.scene.add(mars3d);
 
 
@@ -614,7 +614,7 @@
 				var jupiter3d = new THREE.Object3D();
 				jupiter3d.add(jupiterMesh);
 				jupiter3d.position.set(900,0,500);
-				demo.visuals.push(jupiter3d);
+				//demo.visuals.push(jupiter3d);
 				demo.scene.add(jupiter3d);
 
 
@@ -627,7 +627,7 @@
 				var saturn3d = new THREE.Object3D();
 				saturn3d.add(saturnMesh);
 				saturn3d.position.set(1500,0,-150);
-				demo.visuals.push(saturn3d);
+				//demo.visuals.push(saturn3d);
 				demo.scene.add(saturn3d);
 
 				var saturnRing = new THREE.RingGeometry(150,230,30,30);
@@ -645,7 +645,7 @@
 				var euler = new THREE.Euler(0,0,1.57, 'XYZ');
 				//saturnRing3d.rotation.set(new THREE.Vector3(0,0,Math.PI/2));
 				//saturnRing3d.rotateOnAxis(new THREE.Vector3(1,0,0), 1.57);
-				demo.visuals.push(saturnRing3d);
+				//demo.visuals.push(saturnRing3d);
 				demo.scene.add(saturnRing3d);
 
 
@@ -658,7 +658,7 @@
 				var uranus3d = new THREE.Object3D();
 				uranus3d.add(uranusMesh);
 				uranus3d.position.set(1900,0,-400);
-				demo.visuals.push(uranus3d);
+				//demo.visuals.push(uranus3d);
 				demo.scene.add(uranus3d);
 
 				var uranusRing = new THREE.RingGeometry(72,140,30,30);
@@ -673,7 +673,7 @@
 				var uranusRing3d = new THREE.Object3D();
 				uranusRing3d.add(uranusRingMesh);
 				uranusRing3d.position.set(1900,0,-400);
-				demo.visuals.push(uranusRing3d);
+				//demo.visuals.push(uranusRing3d);
 				demo.scene.add(uranusRing3d);
 
 
@@ -686,7 +686,7 @@
 				var neptune3d = new THREE.Object3D();
 				neptune3d.add(neptuneMesh);
 				neptune3d.position.set(2200,0,700);
-				demo.visuals.push(neptune3d);
+				//demo.visuals.push(neptune3d);
 				demo.scene.add(neptune3d);
 
 
@@ -701,7 +701,7 @@
 				var pluto3d = new THREE.Object3D();
 				pluto3d.add(plutoMesh);
 				pluto3d.position.set(2500,0,400);
-				demo.visuals.push(pluto3d);
+				//demo.visuals.push(pluto3d);
 				demo.scene.add(pluto3d);
 
 
@@ -715,7 +715,7 @@
 				var star3d = new THREE.Object3D();
 				star3d.add(starMesh);
 				if (starMesh && star3d) {
-					demo.visuals.push(star3d);
+					//demo.visuals.push(star3d);
 					demo.scene.add(star3d);
 				} else {
 					console.log("Couldn't create star map");
@@ -729,7 +729,7 @@
 				sun3d.position.set(-3100,0,0);
 				sun3d.add(sunMesh);
 				if (sunMesh && sun3d) {
-					demo.visuals.push(sun3d);
+					//demo.visuals.push(sun3d);
 					demo.scene.add(sun3d);
 				} else {
 					console.log("ERROR: Couldn't generate sun.")

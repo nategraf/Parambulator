@@ -333,29 +333,49 @@
       }
 
       function generateBolide(mass, world){
-              let redEarth = demo.getRedEarth(); 
-              let size = demo.getSize(); 
-              let shape = new CANNON.Sphere(size);            
-              let randomMult = 1;
-              let a = demo.getA() + Math.random()*randomMult; 
-              let e = demo.getE() + Math.random() * randomMult/5.0;
-              let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
-              let O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
-              let o = orb.common.deg2rad(demo.geto());
-              let m0 = Math.PI * 2 * Math.random();
-              let orbitElems = [a, e, i, O, o, world.dt * world.stepnumber, 0, m0, M1];
-              let cartesian = orb.position.keplerian(...orbitElems);
-              let bolide = new CANNON.Body({
-                  mass: mass, 
-                  position: new CANNON.Vec3(...cartesian[0]),
-                  collisionFilterGroup: 1 | 1 << 15,
-                  collisionFilterMask: 1 | 1 << 15,
-              });
-              bolide.addShape(shape); 
-              bolide.velocity.set(...cartesian[1]);
-              bolide.linearDamping = 0.0;
-              bolide.orbitElems = orbitElems; // Define our own member for storing the needed information
-              bolide.preStep = function(){
+                let redEarth = demo.getRedEarth(); 
+                let size = demo.getSize(); 
+                let shape = new CANNON.Sphere(size);            
+                let randomMult = 1;
+                let a = demo.getA() + Math.random()*randomMult; 
+                let e = demo.getE() + Math.random() * randomMult/5.0;
+                let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+                let O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+                let o = orb.common.deg2rad(demo.geto());
+                let m0 = Math.PI * 2 * Math.random();
+                let orbitElems = [a, e, i, O, o, world.dt * world.stepnumber, 0, m0, M1];
+                let cartesian = orb.position.keplerian(...orbitElems);
+                let bolide = new CANNON.Body({
+                    mass: mass, 
+                    position: new CANNON.Vec3(...cartesian[0]),
+                    collisionFilterGroup: 1 | 1 << 15,
+                    collisionFilterMask: 1 | 1 << 15,
+                });
+                bolide.addShape(shape);
+
+                // If this is the first time this code has been run, make new THREE mesh
+                if (!bolideGeo) {
+                    var bolideGeo = new THREE.SphereGeometry(size, 32, 32);
+                    var bolideTexture = new THREE.TextureLoader().load("img/phobos2k.jpg");
+                    var bolideMaterial = new THREE.MeshPhongMaterial({
+                        map: bolideTexture
+                    });
+                    var bolideMesh = new THREE.Mesh(bolideGeo, bolideMaterial);
+                }
+                let bolide3D = new THREE.Object3D();
+                bolide3D.add(bolideMesh);
+                bolide3D.position = bolide.position;
+                bolide3D.quaternion = bolide.quaternion;
+                demo.bodies.push(bolide)
+                demo.visuals.push(bolide3D);
+                bolide.visualref = bolide3D;
+                bolide.visualref.visualId = demo.bodies.length - 1;
+                demo.scene.add(bolide3D);
+
+                bolide.velocity.set(...cartesian[1]);
+                bolide.linearDamping = 0.0;
+                bolide.orbitElems = orbitElems; // Define our own member for storing the needed information
+                bolide.preStep = function(){
                 // Get the vector pointing from the moon to the planet center
                 let bolide_to_planet = new CANNON.Vec3();
                 this.position.negate(bolide_to_planet);
@@ -567,7 +587,7 @@
                     addBolideCollisionBehavior(bolide, world);
                 
                     world.addBody(bolide); 
-                    demo.addVisual(bolide); 
+                    //demo.addVisual(bolide); 
                 }
             }
 
