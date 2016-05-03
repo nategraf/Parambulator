@@ -528,6 +528,8 @@
   		  });
         earthBody.addShape(earthShape);
 				earthBody.position.set(0,0,0);
+				earthBody.quaternion.w = 1;
+				//earthBody.angularVelocity = new CANNON.Vec3(10,10,10);
         earthBody.isPlanet = true;
 				demo.bodies.push(earthBody);
 				let earth = new THREE.SphereGeometry(30,32,32);
@@ -555,6 +557,7 @@
 				});
 				cloudBody.addShape(cloudShape);
 				cloudBody.position.set(0,0,0);
+				cloudBody.quaternion.w = 1;
 				//cloudBody.quaternion.set(0.2, 0.7, 0);
 				cloudBody.isPlanet = false;
 				demo.bodies.push(cloudBody);
@@ -578,10 +581,6 @@
 				demo.scene.add(cloud3d);
 					
 					//MERCURY
-				//var mercuryShape = new CANNON.Sphere(5);
-				//var mercuryBody = new CANNON.Body({mass: 0});
-				//mercuryBody.addShape(mercuryShape);
-				//mercuryBody.position.set(-1000,0,100);
 				var mercuryTexture = new THREE.TextureLoader().load("img/mercurymap.jpg");
 				var mercuryBump = new THREE.TextureLoader().load("img/mercurybump.jpg");
 				var mercuryMaterial = new THREE.MeshPhongMaterial({
@@ -593,22 +592,12 @@
 				var merc3d = new THREE.Object3D();
 				merc3d.add(mercuryMesh);
 				merc3d.position.set(-1000,0,100);
-				//mercuryMesh.position = mercuryBody.position;
-				//mercuryMesh.quaternion = mercuryBody.quaternion;
-				//demo.bodies.push(mercuryBody);
-				//mercuryBody.visualref = merc3d;
-			  //mercuryBody.visualref.visualId = demo.bodies.length - 1;
-				//demo.visuals.push(merc3d);
 				demo.scene.add(merc3d);
 				
 				
 				
 				
 				//VENUS
-				//var venusShape = new CANNON.Sphere(18);
-				//var venusBody = new CANNON.Body({mass: 0});
-				//venusBody.addShape(venusShape);
-				//venusBody.position.set(-500,0,-70);
 				var venus = new THREE.SphereGeometry(18,32,32);
 				var venusTexture = new THREE.TextureLoader().load("img/venusmap.jpg");
 				var venusBump = new THREE.TextureLoader().load("img/venusbump.jpg");
@@ -620,11 +609,6 @@
 				var venus3d = new THREE.Object3D();
 				venus3d.add(venusMesh);
 				venus3d.position.set(-500,0,-70);
-				//venus3d.quaternion = venusBody.quaternion;
-				//demo.bodies.push(venusBody);
-				//venusBody.visualref = venus3d;
-				//venusBody.visualref.visualId = demo.bodies.length - 1;
-				//demo.visuals.push(venus3d);
 				demo.scene.add(venus3d);
 
 				
@@ -680,16 +664,10 @@
 					map: saturnRingTexture
 				});
 				var saturnRingMesh = new THREE.Mesh(saturnRing, saturnRingMaterial);
-				//saturnRingMesh.lookAt(0.5,-4,1);
-				//saturnRingMesh.rotation.set(euler);
-				//saturnRingMesh.rotateOnAxis(new THREE.Vector3(1,0,0), 1.57);
 				var saturnRing3d = new THREE.Object3D();
 				saturnRing3d.add(saturnRingMesh);
 				saturnRing3d.position.set(1500,0,-150);
 				var euler = new THREE.Euler(0,0,1.57, 'XYZ');
-				//saturnRing3d.rotation.set(new THREE.Vector3(0,0,Math.PI/2));
-				//saturnRing3d.rotateOnAxis(new THREE.Vector3(1,0,0), 1.57);
-				//demo.visuals.push(saturnRing3d);
 				demo.scene.add(saturnRing3d);
 
 				
@@ -715,7 +693,6 @@
 				var uranusRing3d = new THREE.Object3D();
 				uranusRing3d.add(uranusRingMesh);
 				uranusRing3d.position.set(1900,0,-400);
-				//demo.visuals.push(uranusRing3d);
 				demo.scene.add(uranusRing3d);
 
 
@@ -756,17 +733,11 @@
 				var star3d = new THREE.Object3D();
 				star3d.add(starMesh);
 				if (starMesh && star3d) {
-					//demo.visuals.push(star3d);
 					demo.scene.add(star3d);
 				} else {
 					console.log("Couldn't create star map");
 				}
-				//star3d.add(starMesh);
 				
-				//var sunShape = new CANNON.Sphere(800);
-				//var sunBody = new CANNON.Body({mass: 0});
-				//sunBody.addShape(sunShape);
-				//sunBody.position.set(-3100,0,0);
 				var sun = new THREE.SphereGeometry(800, 32, 32);
 				var sunMaterial = new THREE.MeshBasicMaterial();
 				sunMaterial.map = new THREE.TextureLoader().load("img/preview_sun.jpg");
@@ -774,12 +745,6 @@
 				var sun3d = new THREE.Object3D();
 				sun3d.add(sunMesh);
 				sun3d.position.set(-3100,0,0);
-				//sun3d.quaternion = sunBody.quaternion;
-				//demo.bodies.push(sunBody);
-				//sunBody.visualref = sun3d;
-				//sunBody.visualref.visualId = demo.bodies.length - 1;
-				//pluto3d.position.set(2500,0,400);
-				//demo.visuals.push(sun3d);
 				demo.scene.add(sun3d);
 					
 					
@@ -838,7 +803,7 @@
               world.addBody(arklets[i]);
               //demo.addVisual(arklets[i]); 
 							let arklet = new THREE.CylinderGeometry(0.2,0.35,0.4, 32, 32);
-							let arkletMaterial = new THREE.MeshPhongMaterial({color: 0xffffff});
+							let arkletMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, shininess: 60});
 							let arklet3d = new THREE.Object3D();
 							arklet3d.arkletMesh = new THREE.Mesh(arklet, arkletMaterial);
 							arklet3d.add(arklet3d.arkletMesh);

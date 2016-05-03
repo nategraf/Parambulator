@@ -303,7 +303,7 @@ CANNON.Demo = function(options){
 							let y = b.quaternion.y;
 							let z = b.quaternion.z;
 							let w = b.quaternion.w;
-							b.quaternion.set(x+0.0001, y+.00001, z, w=1);
+							b.quaternion.set(x+0.0001, y+.00001, z, w-0.00001);
 							b.quaternion.normalize();
 							b.position.set(0,0,0);
 						}
@@ -312,7 +312,7 @@ CANNON.Demo = function(options){
 							let y = b.quaternion.y;
 							let z = b.quaternion.z;
 							let w = b.quaternion.w;
-							b.quaternion.set(x, y-0.0002, z, w=1);
+							b.quaternion.set(x, y-0.0002, z, w-0.00001);
 							b.quaternion.normalize();
 							b.position.set(0,0,0);
 						}
