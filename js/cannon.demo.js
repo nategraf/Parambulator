@@ -45,7 +45,7 @@ CANNON.Demo = function(options){
         up: false,
         right: false,
         down: false,
-        a: 10,
+        a: 34,
         e: .002,
         i: 90,
         O: 1,
@@ -298,6 +298,24 @@ CANNON.Demo = function(options){
             if(b.quaternion){
                 visual.quaternion.copy(b.quaternion);
             }
+						if(b.isCloud) {
+							let x = b.quaternion.x;
+							let y = b.quaternion.y;
+							let z = b.quaternion.z;
+							let w = b.quaternion.w;
+							b.quaternion.set(x+0.0001, y+.00001, z, w=1);
+							b.quaternion.normalize();
+							b.position.set(0,0,0);
+						}
+						if(b.isEarth) {
+							let x = b.quaternion.x;
+							let y = b.quaternion.y;
+							let z = b.quaternion.z;
+							let w = b.quaternion.w;
+							b.quaternion.set(x, y-0.0002, z, w=1);
+							b.quaternion.normalize();
+							b.position.set(0,0,0);
+						}
         }
 
         // Render contacts
@@ -487,7 +505,7 @@ CANNON.Demo = function(options){
 
         // SCENE
         scene = that.scene = new THREE.Scene();
-        scene.fog = new THREE.Fog( 0x222222, 1000, FAR+100 );
+        scene.fog = new THREE.Fog( 0x222222, 1000, FAR*1000 );
 
         // LIGHTS
         //ambient = new THREE.AmbientLight( 0xf0f0f0 );
