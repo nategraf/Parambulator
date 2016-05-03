@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
   </head>
   <body>
+          <audio src="space.mp3" autoplay>
+
     <script src="js/cannon.min.js"></script>
     <script src="js/cannon.demo.js"></script>
     <script src="js/dat.gui.js"></script>
@@ -383,6 +385,7 @@
       }
 
 	  function generateIzzy(){
+<<<<<<< Updated upstream
           let mass = 20; 
           let shape = new CANNON.Cylinder(1, 1, 5, 10);  
           let randomMult  = 1; 
@@ -394,6 +397,27 @@
           let cartesian = orb.position.keplerian(a+40, e, i, O, o, 0, 0, 0, M1);        
 
           let izzy = new CANNON.Body({
+=======
+      
+          var mass = 1; 
+          var shape = new CANNON.Cylinder(1,1, 5, 10);  
+          var randomMult  = 1; 
+          var a = demo.getA() + Math.random()*randomMult; 
+          var e = demo.getE() + Math.random() * randomMult/5.0;
+          var i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
+          var O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
+          var o = orb.common.deg2rad(demo.geto());
+          var cartesian = orb.position.keplerian(a+40, e, i, O, o, 0, 0, 0, M1); 
+
+          var x = cartesian[0][0]; 
+          var y = cartesian[0][1]; 
+          var z = cartesian[0][2]; 
+          var vx = (cartesian[1][0]);
+          var vy = (cartesian[1][1]);
+          var vz = (cartesian[1][2]);          
+
+          var izzy = new CANNON.Body({
+>>>>>>> Stashed changes
               mass: mass, 
               position: new CANNON.Vec3(...cartesian[0])
               });
