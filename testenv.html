@@ -35,12 +35,13 @@
         const YUNITVEC = new CANNON.Vec3(0,1,0);
         const ZUNITVEC = new CANNON.Vec3(0, 0, 1);
         const PREDICTIONTIME = 3;
-        const MINPREDICTIONSTEP = 0.025;
+        const MINPREDICTIONSTEP = 0.5;
         const GM = 600;
         const M1 = GM/orb.constants.common.G;
 		const AVOIDANCETHRUST = 100;
 		const FOLLOWTHRUST = 20;
 		const CORRECTIONTHRUST = 20;
+		const IZZYTHRUST = 50;
 		const CORRECTIONTHRESHOLD = 3;
 		const INNERENVELOPE = 7;
 		const OUTERENVELOPE = 17;
@@ -80,8 +81,8 @@
             }
             let projectionShape = new CANNON.Sphere(body.shapes[0].radius); // WARNING: Only works for spherical bodies
             projectionShape.collisionResponse = false;
-            for (let i = 1; i <= Math.sqrt(PREDICTIONTIME / MINPREDICTIONSTEP) ; i++) {
-                let t = i * i * MINPREDICTIONSTEP;
+            for (let i = 1; i <= PREDICTIONTIME / MINPREDICTIONSTEP ; i++) {
+                let t = i * MINPREDICTIONSTEP;
                 let projection = new CANNON.Body({
                     mass: 1,
                     collisionFilterGroup: 2 << i,
@@ -220,9 +221,7 @@
         return onwards; 
       }
 	  
-	  function generateArkletCloud(n, world){
-          let izzyPosition = izzy.position; 
-          
+	  function generateArkletCloud(n, world){         
           let mass = 1; 
           let randomMult = 1; 
           //let shape = new CANNON.Cylinder(.2, .2, 1, 10); 
@@ -273,7 +272,7 @@
 				// Now apply force on moon
 				// Fore is pointing in the moon-planet direction
 				arklet_to_planet.normalize();
-				arklet_to_planet.scale((GM * mass) / Math.pow(distance, 2), arklet_to_planet);
+				arklet_to_planet.scale((GM*mass) / Math.pow(distance, 2), arklet_to_planet);
 				this.force.vadd(arklet_to_planet, this.force);
 				//Add in forces acting on Arklet here
 				
@@ -380,7 +379,7 @@
       }
 
 	  function generateIzzy(){
-          let mass = 1; 
+          let mass = 20; 
           let shape = new CANNON.Cylinder(1, 1, 5, 10);  
           let randomMult  = 1; 
           let a = demo.getA() + Math.random()*randomMult; 
@@ -400,7 +399,7 @@
 
           izzy.addShape(shape); 
 
-      izzy.preStep = function(){
+          izzy.preStep = function(){
                 forward = demo.getSpace(); 
                 // Get the vector pointing from the moon to the planet center
                 let izzy_to_planet = new CANNON.Vec3();
@@ -408,88 +407,68 @@
                 this.position.negate(temp); 
                 temp.normalize(); 
                 this.position.negate(izzy_to_planet);
-              //   // Get distance from planet to moon
+                // Get distance from planet to izzy
                 let distance = izzy_to_planet.length();
-              //   // Now apply force on moon
-              //   // Fore is pointing in the moon-planet direction
+                // Now apply force on izzy
+                // Fore is pointing in the moon-planet direction
                 izzy_to_planet.normalize();
-                izzy_to_planet.mult((GM*mass)/Math.pow(distance,2),this.force);
+                izzy_to_planet.scale((GM * mass) / Math.pow(distance, 2), izzy_to_planet);
+                this.force.vadd(izzy_to_planet, this.force);
 
                 if(space == true){
+                    let thrust = izzy.velocity.unit();
+                    thrust.scale(IZZYTHRUST, thrust);
+                    this.force.vadd(thrust, this.force);
 
-                  this.velocity.x = this.velocity.x * 1.10; 
-                  this.velocity.y = this.velocity.y * 1.10; 
-                  this.velocity.z = this.velocity.z * 1.10;
-                  space = false; 
+                    space = false;
                 }
 
                 if(b == true){
-                this.velocity.x = this.velocity.x *.75; 
-                this.velocity.y = this.velocity.y *.75; 
-                this.velocity.z = this.velocity.z *.75; 
+                    let thrust = this.velocity.unit().negate();
+                    thrust.scale(IZZYTHRUST, thrust);
+                    this.force.vadd(thrust, this.force);
 
-                b = false; 
+                    b = false;
                 }
 
                 if(left == true){
-                  if(temp.x > 0)
-                    temp.x = 1 - temp.x; 
-                  else
-                    temp.x = 1 + temp.x; 
+                    let thrust = this.velocity.cross(this.position).unit().negate();
+                    thrust.scale(IZZYTHRUST, thrust);
+                    this.force.vadd(thrust, this.force);
 
-                  if(temp.y > 0)
-                    temp.y = 1 - temp.y;
-                  else 
-                    temp.y = 1 + temp.y; 
-                  if(temp.z > 0)
-                    temp.z = 1 - temp.z; 
-                  else
-                    temp.z = 1 + temp.z; 
-
-                  this.velocity.x -= (temp.x*1);
-                  this.velocity.y -= (temp.y*1); 
-                  this.velocity.z -= (temp.z*1); 
-   
-                  left = false; 
+                    left = false;
                 }
 
                 if(right == true){
-                  if(temp.x >0)
-                    temp.x = 1 - temp.x; 
-                  else
-                    temp.x = 1 + temp.x; 
+                    let thrust = this.velocity.cross(this.position).unit();
+                    thrust.scale(IZZYTHRUST, thrust);
+                    this.force.vadd(thrust, this.force);
 
-                  if(temp.y > 0)
-                    temp.y = 1 - temp.y;
-                  else 
-                    temp.y = 1 + temp.y; 
-                  if(temp.z > 0)
-                    temp.z = 1 - temp.z; 
-                  else
-                    temp.z = 1 + temp.z; 
-
-                  this.velocity.x += (temp.x*1);
-                  this.velocity.y += (temp.y*1); 
-                  this.velocity.z += (temp.z*1); 
-   
-                  right = false; 
+                    right = false;
                 }
 
                 if(up == true){
-                this.velocity.x -= (temp.x *1);  
-                this.velocity.y -= (temp.y *1);  
-                this.velocity.z -= (temp.z *1);  
-                up = false; 
+                    let thrust = this.position.unit();
+                    thrust.scale(IZZYTHRUST, thrust);
+                    this.force.vadd(thrust, this.force);
+
+                    up = false;
                 } 
 
                 if(down == true){
-                this.velocity.x += (temp.x *1);  
-                this.velocity.y += (temp.y *1);  
-                this.velocity.z += (temp.z *1); 
-                down = false; 
+                    let thrust = this.position.unit().negate();
+                    thrust.scale(IZZYTHRUST, thrust);
+                    this.force.vadd(thrust, this.force);
+
+                    down = false;
                 }
             
-              }
+          }
+
+          izzy.postStep = function () {
+              izzy.quaternion.setFromVectors(ZUNITVEC, izzy.velocity);
+              this.force.setZero();
+          }
           return izzy; 
       }
 	  
