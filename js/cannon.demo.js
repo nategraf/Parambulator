@@ -34,7 +34,6 @@ CANNON.Demo = function(options){
 				spawnArklets: false,
         numberOfArklets: 10,
         size: .5,
-        redEarth: true,
         frequency: 30,
         //speed: 10,
         //vx: 1,
@@ -719,10 +718,6 @@ CANNON.Demo = function(options){
 
             });
 
-            bf.add(settings, 'redEarth').onChange(function(redEarth){
-
-            });
-
             bf.add(settings, 'frequency').onChange(function(frequency){
             });
 
@@ -1139,9 +1134,7 @@ CANNON.Demo.prototype.setDown = function(){
     this.settings.down = false;
 }
 
-CANNON.Demo.prototype.getRedEarth = function(){
-    return this.settings.redEarth;
-}
+
 
 CANNON.Demo.prototype.addVisual = function(body){
     var s = this.settings;
