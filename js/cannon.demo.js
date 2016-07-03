@@ -18,8 +18,6 @@ CANNON.Demo = function(options){
     this.changeScene = changeScene;
     this.start = start;
 
-    var sceneFolder;
-
     // Global settings
     var settings = this.settings = {
         stepFrequency: 60,
@@ -255,7 +253,7 @@ CANNON.Demo = function(options){
         scenePicker[title] = function(){
             changeScene(idx);
         };
-        sceneFolder.add(scenePicker,title);
+        gui.add(scenePicker,title);
     }
 
     /**
@@ -722,9 +720,6 @@ CANNON.Demo = function(options){
                 world.solver.tolerance = t;
             });*/
 
-            // Scene picker
-            sceneFolder = gui.addFolder('Reset');
-
             //Spawn Bolides
             var bf = gui.addFolder('Adjust Settings');
 
@@ -758,7 +753,6 @@ CANNON.Demo = function(options){
             bf.add(settings, 'o').onChange(function(o){
             });
 
-            //sceneFolder.open();
         }
 
 
