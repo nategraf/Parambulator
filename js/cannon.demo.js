@@ -31,7 +31,7 @@ CANNON.Demo = function(options){
         iterations: 3,
         tolerance: 0.0001,
         spawnBolides: false,
-				spawnArklets: false,
+		spawnArklets: false,
         numberOfArklets: 10,
         size: .5,
         frequency: 30,
@@ -728,22 +728,22 @@ CANNON.Demo = function(options){
             //Spawn Bolides
             var bf = gui.addFolder('Adjust Settings');
 
-			bf.add(settings, 'Spawn Arklets').onChange(function(spawnArklets){
+            bf.add(settings, 'spawnArklets').onChange(function (spawnArklets) {
 
             });
 
-            bf.add(settings, 'Number of Arkets').onChange(function(numberOfArklets){
+            bf.add(settings, 'numberOfArklets').onChange(function (numberOfArklets) {
 
             });
 
-            bf.add(settings, 'Spawn Bolides').onChange(function(spawnBolides){
+            bf.add(settings, 'spawnBolides').onChange(function (spawnBolides) {
 
             });
 
-            bf.add(settings, 'Frequency').onChange(function(frequency){
+            bf.add(settings, 'frequency').onChange(function (frequency) {
             });
 
-            bf.add(settings, 'Size').onChange(function(size){
+            bf.add(settings, 'size').onChange(function (size) {
 
             });
 
