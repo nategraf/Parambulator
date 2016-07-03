@@ -48,6 +48,7 @@ CANNON.Demo = function(options){
         i: 90,
         O: 1,
         o: 1,
+        randomness: 1,
         k: 1e6,
         d: 3,
         scene: 0,
@@ -733,6 +734,7 @@ CANNON.Demo = function(options){
             bf.add(settings, 'i', 0, 180)
             bf.add(settings, 'O', 0, 360)
             bf.add(settings, 'o', 0, 360)
+            bf.add(settings, 'randomness', 0, 10);
 
         }
 
@@ -1048,6 +1050,10 @@ CANNON.Demo.prototype.getO = function(){
 
 CANNON.Demo.prototype.geto = function(){
     return this.settings.o;
+}
+
+CANNON.Demo.prototype.getRandomness = function () {
+    return this.settings.randomness;
 }
 
 CANNON.Demo.prototype.getSpawnBolides = function(){

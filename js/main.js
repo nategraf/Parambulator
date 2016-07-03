@@ -29,6 +29,7 @@ const OUTERENVELOPE = 17;
 const PERSONALSPACEFACTOR = 5;
 var spawnArkletsOnce = true;
 var bolides = [];
+var arklets = [];
 
 var key_space = false;
 var key_b = false;
@@ -209,8 +210,6 @@ function generateArkletCloud(n, world) {
     let vy = izzy.vy;
     let vz = izzy.vz;
 
-    let arklets = new Array();
-
     for (let i = 0; i < n; i++) {
         let x = izzy.position.x;
         let y = izzy.position.y;
@@ -298,7 +297,7 @@ function generateBolide(world) {
     let size = demo.getSize();
     let mass = 4 / 3.0 * Math.PI * Math.pow(size, 3);
     let shape = new CANNON.Sphere(size);
-    let randomMult = 1;
+    let randomMult = demo.getRandomness();
     let a = demo.getA() + Math.random() * randomMult;
     let e = demo.getE() + Math.random() * randomMult / 5.0;
     let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
@@ -787,7 +786,6 @@ demo.addScene("Restart", function () {
         }
 
         if (spawnArklets && spawnArkletsOnce) {
-            let arklets = generateArkletCloud(numberOfArklets, world);
             for (let i = 0; i < arklets.length; i++) {
                 world.addBody(arklets[i]);
                 //demo.addVisual(arklets[i]); 
