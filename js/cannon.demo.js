@@ -635,7 +635,7 @@ CANNON.Demo = function(options){
             gui.domElement.parentNode.style.zIndex=120;
 
             // Render mode
-            var rf = gui.addFolder('Rendering');
+            //var rf = gui.addFolder('Rendering'); 
 
             rf.add(settings,'rendermode',{Solid:"solid",Wireframe:"wireframe"}).onChange(function(mode){
                 setRenderMode(mode);
@@ -674,7 +674,7 @@ CANNON.Demo = function(options){
             });
 
             // World folder
-            var wf = gui.addFolder('World');
+            //var wf = gui.addFolder('World');
             // Pause
             wf.add(settings, 'paused').onChange(function(p){
                 /*if(p){
@@ -708,7 +708,7 @@ CANNON.Demo = function(options){
             });
 
             // Solver folder
-            var sf = gui.addFolder('Solver');
+            //var sf = gui.addFolder('Solver');
             sf.add(settings, 'iterations',1,50).step(1).onChange(function(it){
                 world.solver.iterations = it;
             });
@@ -723,40 +723,30 @@ CANNON.Demo = function(options){
             });
 
             // Scene picker
-            sceneFolder = gui.addFolder('Scenes');
+            sceneFolder = gui.addFolder('Reset');
 
             //Spawn Bolides
-            var bf = gui.addFolder('Spawn Bolides');
+            var bf = gui.addFolder('Adjust Settings');
 
-			bf.add(settings, 'spawnArklets').onChange(function(spawnArklets){
-
-            });
-
-            bf.add(settings, 'numberOfArklets').onChange(function(numberOfArklets){
+			bf.add(settings, 'Spawn Arklets').onChange(function(spawnArklets){
 
             });
 
-            bf.add(settings, 'spawnBolides').onChange(function(spawnBolides){
+            bf.add(settings, 'Number of Arkets').onChange(function(numberOfArklets){
 
             });
 
-            bf.add(settings, 'frequency').onChange(function(frequency){
-            });
-
-            //bf.add(settings, 'speed').onChange(function(speed){
-            //
-            //});
-
-            bf.add(settings, 'size').onChange(function(size){
+            bf.add(settings, 'Spawn Bolides').onChange(function(spawnBolides){
 
             });
 
-            //bf.add(settings, 'vx').onChange(function(vx){
-            //});
-            //bf.add(settings, 'vy').onChange(function(vy){
-            //});
-            //bf.add(settings, 'vz').onChange(function(vz){
-            //});
+            bf.add(settings, 'Frequency').onChange(function(frequency){
+            });
+
+            bf.add(settings, 'Size').onChange(function(size){
+
+            });
+
             bf.add(settings, 'a').onChange(function(a){
             });
             bf.add(settings, 'e').onChange(function(e){
@@ -768,7 +758,7 @@ CANNON.Demo = function(options){
             bf.add(settings, 'o').onChange(function(o){
             });
 
-            sceneFolder.open();
+            //sceneFolder.open();
         }
 
 
