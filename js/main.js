@@ -747,7 +747,7 @@ demo.addScene("Restart", function () {
         let numberOfArklets = demo.getNumberOfArklets();
         let spawnArklets = demo.getSpawnArklets();
         spawnBolides = demo.getSpawnBolides();
-        let frequency = demo.getFrequency();
+        let numberOfBolides = demo.getNumberOfBolides();
         let forward = demo.getSpace();
         let backward = demo.getB();
         let testAngular = demo.getLeft();
@@ -812,12 +812,16 @@ demo.addScene("Restart", function () {
         }
 
         if (spawnBolides) {
-            if ((index % frequency) == 0) {
+            if (bolides.length < numberOfBolides) {
                 let bolide = generateBolide(world);
                 addTimeStepPathPrediction(bolide, world, false); // Add the path projections!
                 addBolideCollisionBehavior(bolide, world);
 
                 world.addBody(bolide);
+                bolides.push(bolide);
+            }
+            else if (bolides.length > numberOfBolides) {
+                // Delete some bolides
             }
         }
         index++;

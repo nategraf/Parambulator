@@ -32,11 +32,8 @@ CANNON.Demo = function(options){
 		spawnArklets: false,
         numberOfArklets: 10,
         size: .5,
-        frequency: 30,
-        //speed: 10,
-        //vx: 1,
-        //vy: 1,
-        //vz: 1,
+        numberOfBolides: 30,
+
 		space: false,
         b: false,
         left: false,
@@ -727,7 +724,7 @@ CANNON.Demo = function(options){
             bf.add(settings, 'spawnArklets')
             bf.add(settings, 'numberOfArklets', 0, 100)
             bf.add(settings, 'spawnBolides')
-            bf.add(settings, 'frequency',1, 100)
+            bf.add(settings, 'numberOfBolides',0, 200)
             bf.add(settings, 'size', 0.25, 5)
             bf.add(settings, 'a', 30, 300)
             bf.add(settings, 'e', 0, 0.99)
@@ -1012,8 +1009,8 @@ CANNON.Demo.prototype.getWorld = function(){
     return this.world;
 };
 
-CANNON.Demo.prototype.getFrequency = function(){
-    return this.settings.frequency;
+CANNON.Demo.prototype.getNumberOfBolides = function () {
+    return this.settings.numberOfBolides;
 }
 
 //CANNON.Demo.prototype.getSpeed = function(){
