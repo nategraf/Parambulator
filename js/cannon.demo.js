@@ -635,7 +635,7 @@ CANNON.Demo = function(options){
             gui.domElement.parentNode.style.zIndex=120;
 
             // Render mode
-            //var rf = gui.addFolder('Rendering'); 
+            /*var rf = gui.addFolder('Rendering'); 
 
             rf.add(settings,'rendermode',{Solid:"solid",Wireframe:"wireframe"}).onChange(function(mode){
                 setRenderMode(mode);
@@ -671,17 +671,17 @@ CANNON.Demo = function(options){
                     smoothieCanvas.style.display = "none";
                 }
 
-            });
+            });*/
 
             // World folder
-            //var wf = gui.addFolder('World');
+            /*var wf = gui.addFolder('World');
             // Pause
             wf.add(settings, 'paused').onChange(function(p){
-                /*if(p){
-                    smoothie.stop();
-                } else {
-                    smoothie.start();
-                }*/
+            //    if(p){
+            //        smoothie.stop();
+            //    } else {
+            //        smoothie.start();
+            //    }
             });
             wf.add(settings, 'stepFrequency',60,60*10).step(60);
             var maxg = 100;
@@ -705,10 +705,10 @@ CANNON.Demo = function(options){
             });
             wf.add(settings, 'quatNormalizeFast').onChange(function(fast){
                 world.quatNormalizeFast = !!fast;
-            });
+            });*/
 
             // Solver folder
-            //var sf = gui.addFolder('Solver');
+            /*var sf = gui.addFolder('Solver');
             sf.add(settings, 'iterations',1,50).step(1).onChange(function(it){
                 world.solver.iterations = it;
             });
@@ -720,7 +720,7 @@ CANNON.Demo = function(options){
             });
             sf.add(settings, 'tolerance',0.0,10.0).step(0.01).onChange(function(t){
                 world.solver.tolerance = t;
-            });
+            });*/
 
             // Scene picker
             sceneFolder = gui.addFolder('Reset');
