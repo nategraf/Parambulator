@@ -723,35 +723,16 @@ CANNON.Demo = function(options){
             //Spawn Bolides
             var bf = gui.addFolder('Adjust Settings');
 
-            bf.add(settings, 'spawnArklets').onChange(function (spawnArklets) {
-
-            });
-
-            bf.add(settings, 'numberOfArklets').onChange(function (numberOfArklets) {
-
-            });
-
-            bf.add(settings, 'spawnBolides').onChange(function (spawnBolides) {
-
-            });
-
-            bf.add(settings, 'frequency').onChange(function (frequency) {
-            });
-
-            bf.add(settings, 'size').onChange(function (size) {
-
-            });
-
-            bf.add(settings, 'a').onChange(function(a){
-            });
-            bf.add(settings, 'e').onChange(function(e){
-            });
-            bf.add(settings, 'i').onChange(function(i){
-            });
-            bf.add(settings, 'O').onChange(function(O){
-            });
-            bf.add(settings, 'o').onChange(function(o){
-            });
+            bf.add(settings, 'spawnArklets')
+            bf.add(settings, 'numberOfArklets', 0, 100)
+            bf.add(settings, 'spawnBolides')
+            bf.add(settings, 'frequency',1, 100)
+            bf.add(settings, 'size', 0.25, 5)
+            bf.add(settings, 'a', 30, 300)
+            bf.add(settings, 'e', 0, 0.99)
+            bf.add(settings, 'i', 0, 180)
+            bf.add(settings, 'O', 0, 360)
+            bf.add(settings, 'o', 0, 360)
 
         }
 

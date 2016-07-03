@@ -28,13 +28,14 @@ const INNERENVELOPE = 7;
 const OUTERENVELOPE = 17;
 const PERSONALSPACEFACTOR = 5;
 var spawnArkletsOnce = true;
+var bolides = [];
 
-var space = false;
-var b = false;
-var up = false;
-var down = false;
-var left = false;
-var right = false;
+var key_space = false;
+var key_b = false;
+var key_up = false;
+var key_down = false;
+var key_left = false;
+var key_right = false;
 
 /* these two lines are testing */
 var ArkletsPerLayer = 9;	/* must be a perfect square */
@@ -85,7 +86,7 @@ function addTimeStepPathPrediction(body, world, intelligent) {
 
         world.addEventListener("postStep", function () {
             if (world.bodies.indexOf(body) != -1) {
-                /* T0 (perihelion passage/epoch) may be NaN, which means the object has left orbit */
+                /* T0 (perihelion passage/epoch) may be NaN, which means the object has key_left orbit */
                 orbitElems = body.orbitElems;
                 if (Number.isNaN(orbitElems[6])) {
                     /* Hyperbolic orbit prediction, approximated by linear projection (Which is mostly good enough) */
@@ -203,7 +204,7 @@ function generateArkletCloud(n, world) {
 
     let x = izzy.x;
     let y = izzy.y;
-    let z = izzy.z;	//still overwritten right away
+    let z = izzy.z;	//still overwritten key_right away
     let vx = izzy.vx;		//but allow for different spawn conditions
     let vy = izzy.vy;
     let vz = izzy.vz;
@@ -293,8 +294,9 @@ function generateArkletCloud(n, world) {
     return arklets;
 }
 
-function generateBolide(mass, world) {
+function generateBolide(world) {
     let size = demo.getSize();
+    let mass = 4 / 3.0 * Math.PI * Math.pow(size, 3);
     let shape = new CANNON.Sphere(size);
     let randomMult = 1;
     let a = demo.getA() + Math.random() * randomMult;
@@ -403,46 +405,46 @@ function generateIzzy(world) {
         izzy_to_planet.scale((GM * mass) / Math.pow(distance, 2), izzy_to_planet);
         this.force.vadd(izzy_to_planet, this.force);
 
-        if (space == true) {
+        if (key_space == true) {
             let thrust = izzy.velocity.unit();
             thrust.scale(IZZYTHRUST, thrust);
             this.force.vadd(thrust, this.force);
-            space = false;
+            key_space = false;
         }
 
-        if (b == true) {
+        if (key_b == true) {
             let thrust = this.velocity.unit().negate();
             thrust.scale(IZZYTHRUST, thrust);
             this.force.vadd(thrust, this.force);
-            b = false;
+            key_b = false;
         }
 
-        if (left == true) {
+        if (key_left == true) {
             let thrust = this.velocity.cross(this.position).unit().negate();
             thrust.scale(IZZYTHRUST, thrust);
             this.force.vadd(thrust, this.force);
-            left = false;
+            key_left = false;
         }
 
-        if (right == true) {
+        if (key_right == true) {
             let thrust = this.velocity.cross(this.position).unit();
             thrust.scale(IZZYTHRUST, thrust);
             this.force.vadd(thrust, this.force);
-            right = false;
+            key_right = false;
         }
 
-        if (up == true) {
+        if (key_up == true) {
             let thrust = this.position.unit();
             thrust.scale(IZZYTHRUST, thrust);
             this.force.vadd(thrust, this.force);
-            up = false;
+            key_up = false;
         }
 
-        if (down == true) {
+        if (key_down == true) {
             let thrust = this.position.unit().negate();
             thrust.scale(IZZYTHRUST, thrust);
             this.force.vadd(thrust, this.force);
-            down = false;
+            key_down = false;
         }
 
     }
@@ -503,7 +505,7 @@ function createGlow(object, type) {
 var index = 0;
 var izzy;
 
-demo.addScene("Reset", function () {
+demo.addScene("Restart", function () {
     let world = demo.getWorld();
 
     index = 0;
@@ -755,32 +757,32 @@ demo.addScene("Reset", function () {
         let getDown = demo.getDown();
 
         if (forward == true) {
-            space = true;
+            key_space = true;
             demo.setSpace();
         }
 
         if (backward == true) {
-            b = true;
+            key_b = true;
             demo.setB();
         }
 
         if (testAngular == true) {
-            left = true;
+            key_left = true;
             demo.setLeft();
         }
 
         if (testAngularOpposite == true) {
-            right = true;
+            key_right = true;
             demo.setRight();
         }
 
         if (getUp == true) {
-            up = true;
+            key_up = true;
             demo.setUp();
         }
 
         if (getDown == true) {
-            down = true;
+            key_down = true;
             demo.setDown();
         }
 
@@ -813,7 +815,7 @@ demo.addScene("Reset", function () {
 
         if (spawnBolides) {
             if ((index % frequency) == 0) {
-                let bolide = generateBolide(5, world);
+                let bolide = generateBolide(world);
                 addTimeStepPathPrediction(bolide, world, false); // Add the path projections!
                 addBolideCollisionBehavior(bolide, world);
 
