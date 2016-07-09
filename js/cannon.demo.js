@@ -29,7 +29,7 @@ CANNON.Demo = function(options){
         iterations: 3,
         tolerance: 0.0001,
         spawnBolides: true,
-		spawnArklets: false,
+		spawnArklets: true,
         numberOfArklets: 10,
         size: 1,
         numberOfBolides: 50,

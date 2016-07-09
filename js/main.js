@@ -27,7 +27,6 @@ const CORRECTIONTHRESHOLD = 3;
 const INNERENVELOPE = 7;
 const OUTERENVELOPE = 17;
 const PERSONALSPACEFACTOR = 5;
-var spawnArkletsOnce = true;
 var bolides = [];
 var arklets = [];
 
@@ -94,7 +93,7 @@ function addTimeStepPathPrediction(body, world, intelligent) {
             if (world.bodies.indexOf(body) != -1) {
                 /* T0 (perihelion passage/epoch) may be NaN, which means the object has key_left orbit */
                 orbitElems = body.orbitElems;
-                if (Number.isNaN(orbitElems[6])) {
+                if (!orbitElems || Number.isNaN(orbitElems[6])) {
                     /* Hyperbolic orbit prediction, approximated by linear projection (Which is mostly good enough) */
                     projection.velocity.copy(body.velocity);
                     body.position.vadd(body.velocity.scale(t), projection.position);
@@ -178,25 +177,6 @@ function addPersonalSpace(body, world) {
     if (VISUALIZEPROJECTIONS) demo.addVisual(bubble);
 }
 
-function LayerNum(i) {	//returns which layer an arklet should spawn in
-    //influences z direction
-    let num = Math.floor(i / ArkletsPerLayer);
-    return num;
-}
-
-function LayerLine(i) {	//returns which line in a layer the arklet should spawn in
-    //influences y direction
-    let line = Math.ceil(((i - (ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) / sqrtAPL));
-    if (LinePos(i) == 0) { line += 1; }
-    return line;
-}
-
-function LinePos(i) {	//returns where in a line an arklet should spawn
-    //influences x direction
-    let spot = (((i - (ArkletsPerLayer * Math.floor(i / ArkletsPerLayer))) % sqrtAPL))
-    return spot;
-}
-
 var spawnBolides = true;
 
 function addForces() {
@@ -204,100 +184,113 @@ function addForces() {
     return onwards;
 }
 
-function generateArkletCloud(n, world) {
+function generateArklet(world, izzy) {
     let mass = 1;
     let arkletShape = new CANNON.Cylinder(0.2, 0.35, 0.4, 32);
 
-    let x = izzy.x;
-    let y = izzy.y;
-    let z = izzy.z;	//still overwritten key_right away
-    let vx = izzy.vx;		//but allow for different spawn conditions
-    let vy = izzy.vy;
-    let vz = izzy.vz;
+    // We will spawn the arlets on a random point on a sphere around Izzy
+    // Pick the angles and distance
+    let theta = Math.random() * Math.PI*2;
+    let phi = Math.random() * Math.PI;
+    let radius = 8 + Math.random() * 4;
+    // Translate to cartesian
+    let x = izzy.position.x + radius*Math.cos(theta)*Math.sin(phi);
+    let y = izzy.position.y + radius*Math.sin(theta)*Math.sin(phi);
+    let z = izzy.position.z + radius*Math.cos(phi);
 
-    for (let i = 0; i < n; i++) {
-        let x = izzy.position.x;
-        let y = izzy.position.y;
-        let z = izzy.position.z;
+    let arklet = new CANNON.Body({
+        mass: 1,
+        //Notes: need to make if statement which decides which direction is 'behind'
+        position: new CANNON.Vec3(x, y, z),
+        collisionFilterGroup: 1,
+        collisonFilterMask: 1
+    });
+    arklet.orbitElems = [];
+    arklet.needsOrbitalUpdate = true;
+    arklet.addShape(arkletShape);
+    arklet.velocity.copy(izzy.velocity);
+    arklet.linearDamping = 0.0;
 
-        let arklet = new CANNON.Body({
-            mass: 1,
-            //Notes: need to make if statement which decides which direction is 'behind'
-            position: new CANNON.Vec3(x + INNERENVELOPE - sqrtAPL + (LayerLine(i)), y + INNERENVELOPE + (LayerNum(i)), z + INNERENVELOPE + (LinePos(i))),
-            collisionFilterGroup: 1,
-            collisonFilterMask: 1
-        });
-        arklet.orbitElems = [];
-        arklet.needsOrbitalUpdate = true;
-        arklet.addShape(arkletShape);
-        arklet.velocity.copy(izzy.velocity);
-        arklet.linearDamping = 0.0;
-
-        arklet.preStep = function () {
-            // Get the vector pointing from the moon to the planet center
-            let arklet_to_planet = new CANNON.Vec3();
-            this.position.negate(arklet_to_planet);
-            // Get distance from planet to moon
-            let distance = arklet_to_planet.length();
-            // Now apply force on moon
-            // Fore is pointing in the moon-planet direction
-            arklet_to_planet.normalize();
-            arklet_to_planet.scale((GM * mass) / Math.pow(distance, 2), arklet_to_planet);
-            this.force.vadd(arklet_to_planet, this.force);
-            //Add in forces acting on Arklet here
-
-            // Izzy Following
-            let FtoD = new CANNON.Vec3();
-            this.position.vsub(izzy.position, FtoD);
-            let modFollowForce = 0;
-
-            /*
-             * Need to find a force vector going in the direction which pushes the arklet in the direction
-             * of izzy, and add this to the arklet using vadd
-            */
-            if (!this.velocity.almostEquals(izzy.velocity, CORRECTIONTHRESHOLD)) {
-                let correctionalVector = new CANNON.Vec3();
-                izzy.velocity.vsub(this.velocity, correctionalVector);
-                correctionalVector.normalize();
-                let correctionalThrust = correctionalVector.scale(CORRECTIONTHRUST);
-                this.force.vadd(correctionalThrust, this.force);
-                createGlow(this, "THRUST");
-                this.needsOrbitalUpdate = true;
-            }
-            if (FtoD.length() < 5) {
-                modFollowForce = -0.1 * (FtoD.length() - INNERENVELOPE);
-                this.needsOrbitalUpdate = true;
-            } //when too close to izzy
-            if (FtoD.length() > 15) {
-                modFollowForce = -0.1 * (FtoD.length() - OUTERENVELOPE);
-                this.needsOrbitalUpdate = true;
-            } //when too far from izzy
-            FtoD.normalize();
-            let thrust = FtoD.scale(FOLLOWTHRUST * modFollowForce);
-            this.force.vadd(thrust, this.force);
-            createGlow(this, "WARNING");
-        }
-
-        arklet.postStep = function () {
-            this.force.setZero();
-            if (this.maneuvering) {
-                this.maneuvering = false;
-            }
-
-            if (this.needsOrbitalUpdate) {
-                let x = this.position.toArray();
-                let xDot = this.velocity.toArray();
-                this.orbitElems = orb.position.stateToKepler(x, xDot, world.dt * world.stepnumber, M1); // Calculate the new orbital elements after a change in state
-                let t0 = this.orbitElems[5];
-                this.orbitElems.push(t0, 0, M1); // Append the reference elements of epoch, mean anomoly at epoch, and central mass
-                this.needsOrbitalUpdate = false; // Set that this body no longer needs an update                   
-            }
-            createGlow(this, "NORMAL");
-        }
-
-        arklets.push(arklet);
+    // Create a set of visual resources  to share between all arklets
+    if(!arkletGeo) {
+        var arkletGeo = new THREE.CylinderGeometry(0.2, 0.35, 0.4, 32, 32);
+        var arkletMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        var arkletMesh = new THREE.Mesh(arkletGeo, arkletMaterial);
     }
-    return arklets;
+    let arklet3d = new THREE.Object3D();
+    arklet3d.add(arkletMesh);
+    arklet3d.isArklet = true;
+    arklet3d.position = arklet.position;
+    arklet3d.quaternion = arklet.quaternion;
+    demo.bodies.push(arklet);
+    arklet.visualref = arklet3d;
+    arklet.visualref.visualId = demo.bodies.length - 1;
+    demo.visuals.push(arklet3d);
+    demo.scene.add(arklet3d);
+
+    arklet.preStep = function () {
+        // Get the vector pointing from the moon to the planet center
+        let arklet_to_planet = new CANNON.Vec3();
+        this.position.negate(arklet_to_planet);
+        // Get distance from planet to moon
+        let distance = arklet_to_planet.length();
+        // Now apply force on moon
+        // Fore is pointing in the moon-planet direction
+        arklet_to_planet.normalize();
+        arklet_to_planet.scale((GM * mass) / Math.pow(distance, 2), arklet_to_planet);
+        this.force.vadd(arklet_to_planet, this.force);
+        //Add in forces acting on Arklet here
+
+        // Izzy Following
+        let FtoD = new CANNON.Vec3();
+        this.position.vsub(izzy.position, FtoD);
+        let modFollowForce = 0;
+
+        /*
+            * Need to find a force vector going in the direction which pushes the arklet in the direction
+            * of izzy, and add this to the arklet using vadd
+        */
+        if (!this.velocity.almostEquals(izzy.velocity, CORRECTIONTHRESHOLD)) {
+            let correctionalVector = new CANNON.Vec3();
+            izzy.velocity.vsub(this.velocity, correctionalVector);
+            correctionalVector.normalize();
+            let correctionalThrust = correctionalVector.scale(CORRECTIONTHRUST);
+            this.force.vadd(correctionalThrust, this.force);
+            createGlow(this, "THRUST");
+            this.needsOrbitalUpdate = true;
+        }
+        if (FtoD.length() < 5) {
+            modFollowForce = -0.1 * (FtoD.length() - INNERENVELOPE);
+            this.needsOrbitalUpdate = true;
+        } //when too close to izzy
+        if (FtoD.length() > 15) {
+            modFollowForce = -0.1 * (FtoD.length() - OUTERENVELOPE);
+            this.needsOrbitalUpdate = true;
+        } //when too far from izzy
+        FtoD.normalize();
+        let thrust = FtoD.scale(FOLLOWTHRUST * modFollowForce);
+        this.force.vadd(thrust, this.force);
+        createGlow(this, "WARNING");
+    }
+
+    arklet.postStep = function () {
+        this.force.setZero();
+        if (this.maneuvering) {
+            this.maneuvering = false;
+        }
+
+        if (this.needsOrbitalUpdate && this.orbitElems) {
+            let x = this.position.toArray();
+            let xDot = this.velocity.toArray();
+            this.orbitElems = orb.position.stateToKepler(x, xDot, world.dt * world.stepnumber, M1) || [NaN, NaN, NaN, NaN, NaN, NaN]; // Calculate the new orbital elements after a change in state
+            let t0 = this.orbitElems[5];
+            this.orbitElems.push(t0, 0, M1); // Append the reference elements of epoch, mean anomoly at epoch, and central mass
+            this.needsOrbitalUpdate = false; // Set that this body no longer needs an update                   
+        }
+        createGlow(this, "NORMAL");
+    }
+
+    return arklet;
 }
 
 function generateBolide(world) {
@@ -321,7 +314,7 @@ function generateBolide(world) {
     });
     bolide.addShape(shape);
 
-    // If this is the first time this code has been run, make new THREE mesh
+    // Create a set of visual resources to share between all bolides
     if (!bolideGeo) {
         var bolideGeo = new THREE.SphereGeometry(size, 32, 32);
         var bolideTexture = new THREE.TextureLoader().load("img/phobos2k.jpg");
@@ -464,7 +457,7 @@ function generateIzzy(world) {
 }
 
 function createGlow(object, type) {
-    if (object.visualref.isArklet) {
+    if (object.visualref && object.visualref.isArklet) {
         switch (type) {
             case 'WARNING':
                 //object.visualref.children[0].material.color.set("yellow");
@@ -503,8 +496,8 @@ function createGlow(object, type) {
         object.visualref.children[0].geometry.elementsNeedUpdate = true;
 
     } else {
-        console.log("ERROR: Arg[0] for createGlow() must be of" +
-                " type THREE.Object3D.");
+        // console.log("ERROR: Arg[0] for createGlow() must be of" +
+        //         " type THREE.Object3D.");
     }
 
 }
@@ -516,6 +509,7 @@ demo.addScene("Restart", function () {
     let world = demo.getWorld();
 
     bolides = [];
+    arklets = [];
 
     index = 0;
     izzy = generateIzzy(world);
@@ -796,30 +790,23 @@ demo.addScene("Restart", function () {
             demo.setDown();
         }
 
-        if (spawnArklets && spawnArkletsOnce) {
-            for (let i = 0; i < arklets.length; i++) {
-                world.addBody(arklets[i]);
-                //demo.addVisual(arklets[i]); 
-                let arklet = new THREE.CylinderGeometry(0.2, 0.35, 0.4, 32, 32);
-                let arkletMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
-                let arklet3d = new THREE.Object3D();
-                let arkletMesh = new THREE.Mesh(arklet, arkletMaterial);
-                arklet3d.add(arkletMesh);
-                arklet3d.isArklet = true;
-                arklet3d.position = arklets[i].position;
-                arklet3d.quaternion = arklets[i].quaternion;
-                demo.bodies.push(arklets[i]);
-                arklets[i].visualref = arklet3d;
-                arklets[i].visualref.visualId = demo.bodies.length - 1;
-                demo.visuals.push(arklet3d);
+        if (spawnArklets) {
+            if (arklets.length < numberOfArklets) {
+                let arklet = generateArklet(world, izzy);
+                addTimeStepPathPrediction(arklet, world, true); // Add the path projections!
+                addArkletCollisionBehavior(arklet, world);
 
-                addTimeStepPathPrediction(arklets[i], world, true); // Add the path projections!
-                addArkletCollisionBehavior(arklets[i], world);
-
-
-                demo.scene.add(arklet3d);
+                world.addBody(arklet);
+                arklets.push(arklet);
             }
-            spawnArkletsOnce = false;
+
+            else if (arklets.length > numberOfArklets) {
+                let poppedArklet = arklets.pop();
+                poppedArklet.postStep = function() { 
+                    demo.removeVisual(poppedArklet);
+                    world.remove(poppedArklet);
+                }
+            }
         }
 
         if (spawnBolides) {
