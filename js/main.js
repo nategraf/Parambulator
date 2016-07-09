@@ -676,7 +676,7 @@ demo.addScene("Restart", function () {
 
     var uranusRing = new THREE.RingGeometry(72, 140, 30, 30);
     var uranusRingTexture = new THREE.TextureLoader().load("img/uranusringcolour.jpg");
-    var uranusRingAlpha = new THREE.TextureLoader().load("img/uransringtrans.gif");
+    var uranusRingAlpha = new THREE.TextureLoader().load("img/uranusringtrans.gif");
     var uranusRingMaterial = new THREE.MeshBasicMaterial({
         map: uranusRingTexture,
     });
