@@ -375,13 +375,12 @@ function generateIzzy(world) {
     let mass = 20;
     let izzyBodyShape = new CANNON.Cylinder(1, 1, 5, 10);
     let amaltheaShape = new CANNON.Sphere(2);
-    let randomMult = 1;
-    let a = demo.getA() + Math.random() * randomMult;
-    let e = demo.getE() + Math.random() * randomMult / 5.0;
-    let i = orb.common.deg2rad(demo.getI()) + Math.random() * randomMult;
-    let O = orb.common.deg2rad(demo.getO()) + Math.random() * randomMult;
-    let o = orb.common.deg2rad(demo.geto());
-    let cartesian = orb.position.keplerian(a + 40, e, i, O, o, 0, 0, 0, M1);
+    let a = 50
+    let e = 0
+    let i = 2* Math.PI/5
+    let O = 0
+    let o = 0
+    let cartesian = orb.position.keplerian(a, e, i, O, o, 8, 0, 0, M1);
 
     let izzy = new CANNON.Body({
         mass: mass,

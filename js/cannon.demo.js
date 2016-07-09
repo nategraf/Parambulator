@@ -28,11 +28,11 @@ CANNON.Demo = function(options){
         gz: 0,
         iterations: 3,
         tolerance: 0.0001,
-        spawnBolides: false,
+        spawnBolides: true,
 		spawnArklets: false,
         numberOfArklets: 10,
-        size: .5,
-        numberOfBolides: 30,
+        size: 1,
+        numberOfBolides: 50,
 
 		space: false,
         b: false,
@@ -40,8 +40,8 @@ CANNON.Demo = function(options){
         up: false,
         right: false,
         down: false,
-        a: 34,
-        e: .002,
+        a: 60,
+        e: .005,
         i: 90,
         O: 1,
         o: 1,
@@ -501,7 +501,7 @@ CANNON.Demo = function(options){
         camera = new THREE.PerspectiveCamera( 30, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
 
         //camera.up.set(0,0,1);
-        camera.position.set(0,0,100);
+        camera.position.set(0,0,150);
 
         // SCENE
         scene = that.scene = new THREE.Scene();
@@ -740,7 +740,7 @@ CANNON.Demo = function(options){
         // Trackball controls
         controls = new THREE.TrackballControls( camera, renderer.domElement );
         controls.rotateSpeed = 15.0;
-        controls.zoomSpeed = 0.2;
+        controls.zoomSpeed = 1;
         //controls.panSpeed = 0.2;
         controls.noZoom = false;
         controls.noPan = false;
