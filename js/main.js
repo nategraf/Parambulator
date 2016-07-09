@@ -515,6 +515,8 @@ var izzy;
 demo.addScene("Restart", function () {
     let world = demo.getWorld();
 
+    bolides = [];
+
     index = 0;
     izzy = generateIzzy(world);
 
