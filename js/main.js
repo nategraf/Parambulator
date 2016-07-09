@@ -55,6 +55,7 @@ function addArkletCollisionBehavior(body, world) {
 function addBolideCollisionBehavior(body, world) {
     body.addEventListener("collide", function (e) {
         if (e.contact.bi.isPlanet || e.contact.bj.isPlanet) {
+            console.log("planet collision");
             demo.removeVisual(this);
             world.remove(this);
         } else {
@@ -80,8 +81,8 @@ function addTimeStepPathPrediction(body, world, intelligent) {
         let t = i * MINPREDICTIONSTEP;
         let projection = new CANNON.Body({
             mass: 1,
-            collisionFilterGroup: 2 << i,
-            collisionFilterMask: 2 << i
+            collisionFilterGroup: 1 << i,
+            collisionFilterMask: 1 << i
         });
         projection.addShape(projectionShape);
 
@@ -218,7 +219,9 @@ function generateArkletCloud(n, world) {
         let arklet = new CANNON.Body({
             mass: 1,
             //Notes: need to make if statement which decides which direction is 'behind'
-            position: new CANNON.Vec3(x + INNERENVELOPE - sqrtAPL + (LayerLine(i)), y + INNERENVELOPE + (LayerNum(i)), z + INNERENVELOPE + (LinePos(i)))
+            position: new CANNON.Vec3(x + INNERENVELOPE - sqrtAPL + (LayerLine(i)), y + INNERENVELOPE + (LayerNum(i)), z + INNERENVELOPE + (LinePos(i))),
+            collisionFilterGroup: 1,
+            collisonFilterMask: 1
         });
         arklet.orbitElems = [];
         arklet.needsOrbitalUpdate = true;
@@ -309,8 +312,8 @@ function generateBolide(world) {
     let bolide = new CANNON.Body({
         mass: mass,
         position: new CANNON.Vec3(...cartesian[0]),
-        collisionFilterGroup: 1 | 1 << 15,
-        collisionFilterMask: 1 | 1 << 15,
+        collisionFilterGroup: 1 | (1 << 15),
+        collisionFilterMask: 1 | (1 << 15),
     });
     bolide.addShape(shape);
 
@@ -378,7 +381,9 @@ function generateIzzy(world) {
 
     let izzy = new CANNON.Body({
         mass: mass,
-        position: new CANNON.Vec3(...cartesian[0])
+        position: new CANNON.Vec3(...cartesian[0]),
+        collisionFilterGroup: 1,
+        collisonFilterMask: 1
     });
 
     izzy.velocity.set(...cartesian[1]);
@@ -514,8 +519,8 @@ demo.addScene("Restart", function () {
     let earthShape = new CANNON.Sphere(30);
     let earthBody = new CANNON.Body({
         mass: 0,
-        collisionFilterGroup: (2 << (PREDICTIONTIME / MINPREDICTIONSTEP + 1)) - 1, // Collide with all of the projections and bolides
-        collisionFilterMask: (2 << (PREDICTIONTIME / MINPREDICTIONSTEP + 1)) - 1 // Collide with all of the projections and bolides
+        collisionFilterGroup: 0xFFFF, // Collide with all of the projections and bolides
+        collisionFilterMask: 0xFFFF // Collide with all of the projections and bolides
     });
     earthBody.addShape(earthShape);
     earthBody.position.set(0, 0, 0);
@@ -543,6 +548,7 @@ demo.addScene("Restart", function () {
 
     //EARTH CLOUD LAYER
     let cloudShape = new CANNON.Sphere(30.1);
+    cloudShape.collisionResponse = false;
     let cloudBody = new CANNON.Body({
         mass: 0,
     });
@@ -829,6 +835,7 @@ demo.addScene("Restart", function () {
 
     world.addBody(izzy);
     demo.addVisual(izzy);
+    world.addBody(earthBody);
 
 });
 
