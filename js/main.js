@@ -46,8 +46,10 @@ var demo = new CANNON.Demo();
 
 function addArkletCollisionBehavior(body, world) {
     body.addEventListener("collide", function (e) {
-        demo.removeVisual(this);
-        world.remove(this);
+        this.postStep = function() { 
+            demo.removeVisual(this);
+            world.remove(this);
+        }
         console.log("ARKLET COLLISION!!!");
     });
 }
@@ -55,9 +57,11 @@ function addArkletCollisionBehavior(body, world) {
 function addBolideCollisionBehavior(body, world) {
     body.addEventListener("collide", function (e) {
         if (e.contact.bi.isPlanet || e.contact.bj.isPlanet) {
+            this.postStep = function() { 
+                demo.removeVisual(this);
+                world.remove(this);
+            }
             console.log("planet collision");
-            demo.removeVisual(this);
-            world.remove(this);
         } else {
             body.needsOrbitalUpdate = true;
         }
@@ -827,7 +831,11 @@ demo.addScene("Restart", function () {
                 bolides.push(bolide);
             }
             else if (bolides.length > numberOfBolides) {
-                // Delete some bolides
+                let poppedBolide = bolides.pop();
+                poppedBolide.postStep = function() { 
+                    demo.removeVisual(poppedBolide);
+                    world.remove(poppedBolide);
+                }
             }
         }
         index++;
